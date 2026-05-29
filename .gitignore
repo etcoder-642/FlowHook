@@ -6,8 +6,9 @@
 *.lo
 *.o
 *.obj
+bin/*
 filewatcher
-*.txt
+assets/*.txt
 .vscode/
 
 # Precompiled Headers
