@@ -14,6 +14,9 @@
 #include <unordered_map>
 #include <stdexcept>
 
+#include <mutex>
+#include <thread>
+
 #include "./filewatcher.h"
 
 using namespace l_fw;
@@ -60,12 +63,16 @@ _i_event FileWatcher::handle_events(int fd, vector<int> wd, int argc)
             }
 
             string base_path = watch_registry[event->wd];
-            if(event->len > 0){
+            if (event->len > 0)
+            {
                 e.path = base_path + "/" + event->name;
-            }else {
+            }
+            else
+            {
                 e.path = base_path;
             }
             e.wd = event->wd;
+
             if (event->mask & IN_ISDIR)
                 e.filetype = "dir";
             else
@@ -82,6 +89,7 @@ _i_event FileWatcher::handle_events(int fd, vector<int> wd, int argc)
 
 bool FileWatcher::add_path(string &arg)
 {
+    lock_guard<mutex> lock(registry_mutex);
     int wd = inotify_add_watch(inotify_fd, arg.c_str(),
                                IN_ACCESS | IN_CREATE | IN_DELETE | IN_MODIFY);
     if (wd == -1)
@@ -93,6 +101,7 @@ bool FileWatcher::add_path(string &arg)
 
 bool FileWatcher::remove_path(string &arg)
 {
+    lock_guard<mutex> lock(registry_mutex);
     int _r_wd = r_watch_registry[arg];
     inotify_rm_watch(inotify_fd, _r_wd);
     watch_registry.erase(_r_wd);
@@ -102,12 +111,13 @@ bool FileWatcher::remove_path(string &arg)
 
 void FileWatcher::on_event(uint32_t event_mask, WatchCallback callback)
 {
+    lock_guard<mutex> lock(registry_mutex);
     event_callbacks[event_mask] = callback;
 }
 
-void FileWatcher::start(int timeout)
+void FileWatcher::event_loop(int timeout)
 {
-    while (true)
+    while (isWatching)
     {
         poll_num = poll(fd, nfds, timeout);
 
@@ -121,23 +131,49 @@ void FileWatcher::start(int timeout)
             }
         }
 
-        if (poll_num > 0)
+        if (poll_num < 0)
+            continue;
+
+        if (fd[0].revents & POLLIN)
         {
-            if (fd[0].revents & POLLIN)
+            _i_event e;
+            WatchCallback callback;
             {
+                lock_guard<mutex> lock(registry_mutex);
+
                 vector<int> _wd_keys;
                 for (const auto &[wd, path] : watch_registry)
                 {
                     _wd_keys.push_back(wd);
                 }
-                _i_event e = handle_events(fd[0].fd, _wd_keys, watch_registry.size());
-                WatchCallback callback = event_callbacks[e.event_mask];
-                if (callback)
-                {
-                    callback(e);
-                }
+                e = handle_events(fd[0].fd, _wd_keys, watch_registry.size());
+                callback = event_callbacks[e.event_mask];
+            }
+            if (callback)
+            {
+                callback(e);
             }
         }
     }
+}
+
+void FileWatcher::start(int timeout)
+{
+    if (timeout < 10)
+    {
+        timeout = 10;
+    }
+
+    isWatching = true;
+    background_thread = std::thread(&FileWatcher::event_loop, this, timeout);
     return;
+}
+
+void FileWatcher::stop()
+{
+    isWatching = false;
+    if (background_thread.joinable())
+    {
+        background_thread.join();
+    }
 }

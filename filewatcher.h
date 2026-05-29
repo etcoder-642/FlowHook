@@ -16,6 +16,10 @@
 #include <map>
 #include <unordered_map>
 #include <functional>
+#include <thread>
+#include <stdexcept>
+#include <mutex>
+#include <atomic>
 
 namespace l_fw
 {
@@ -36,10 +40,14 @@ namespace l_fw
         nfds_t nfds;
 
         using WatchCallback = std::function<void(_i_event)>;
-        bool isWatching;
         std::unordered_map<uint32_t, WatchCallback> event_callbacks;
 
+        std::mutex registry_mutex;
+        std::atomic<bool> isWatching{false};
+        std::thread background_thread;
+
         _i_event handle_events(int fd, std::vector<int> wd, int argc);
+        void event_loop(int timeout);
 
     public:
         // constructor
@@ -64,11 +72,13 @@ namespace l_fw
         // prevent copy
         FileWatcher(const FileWatcher &) = delete;
         FileWatcher &operator=(const FileWatcher &) = delete;
+        bool is_running() const { return isWatching; }
 
         bool add_path(std::string &arg);
         bool remove_path(std::string &arg);
         void start_polling();
-        void start(int timeout = -1);
+        void start(int timeout);
+        void stop();
 
         void on_event(uint32_t event_mask, WatchCallback callback);
     };
