@@ -1,15 +1,12 @@
 #include <vector>
 #include <string>
 #include <iostream>
-#include <unistd.h>
 #include <sys/inotify.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <stdio.h>
-#include <poll.h>
 #include <stdlib.h>
 #include <stdexcept>
+#include <fstream>
 
 #include "filewatcher.h"
 
@@ -18,6 +15,7 @@ using namespace l_fw;
 
 void print_modified(_i_event e)
 {
+
     cout << "[printing modify event...]" << endl;
     if (e.event_mask == IN_MODIFY)
     {
@@ -36,32 +34,32 @@ int main(int argc, char *argv[])
     fw.on_event(IN_MODIFY, print_modified);
     fw.start(100);
 
-    cout << "---------------------------------------------" << endl;
-    cout << "LINUX FILE WATCHER v1.0.0" << endl;
-    cout << "---------------------------------------------" << endl;
-    cout << "Input Value(add, remove, exit): ";
-    string input;
-    while (true)
+    string usr_input;
+    while (usr_input != "exit")
     {
-        cin >> input;
-        cout << "You entered: " << input << endl;
-        if (input == "add")
+        cout << "---------------------------------------------" << endl;
+        cout << "LINUX FILE WATCHER v1.0.0" << endl;
+        cout << "---------------------------------------------" << endl;
+        cout << "Input Value(add, remove, exit): ";
+        cin >> usr_input;
+        if (usr_input == "add")
         {
-            cout << "Input path: ";
+            cout << "Input file/directory path: ";
             string path;
             cin >> path;
             fw.add_path(path);
-        } else if (input == "remove")
+        }
+        else if (usr_input == "remove")
         {
-            cout << "Input path: ";
+            cout << "Input file/directory path: ";
             string path;
             cin >> path;
             fw.remove_path(path);
-        } else if (input == "exit")
-        {
-            break;
+        } else {
+            cerr << "INVALID INPUT" << endl;
         }
     }
+
     cout << "Exiting..." << endl;
     fw.stop();
     cout << "---------------------------------------------" << endl;
