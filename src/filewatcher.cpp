@@ -14,6 +14,8 @@
 #include <unordered_map>
 #include <stdexcept>
 
+#include <cstring>
+
 #include <mutex>
 #include <thread>
 
@@ -22,19 +24,21 @@
 using namespace l_fw;
 using namespace std;
 
-_i_event FileWatcher::handle_events(int fd, vector<int> wd, int argc)
+Result<_i_event> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
 {
     _i_event e;
     const struct inotify_event *event;
     char buffer[4096];
     ssize_t len;
 
+    // drain event queue from buffer
     for (;;)
     {
         len = read(fd, buffer, sizeof(buffer));
         if (len == -1 && errno != EAGAIN)
         {
-            throw runtime_error("read failed");
+            std::string _e_msg = "Error: read failure; errno: " + std::string(strerror(errno));
+            return Result<_i_event>::Err(ErrorCode::SYSTEM_IO_ERROR, _e_msg);
         }
 
         if (len <= 0)
@@ -77,45 +81,79 @@ _i_event FileWatcher::handle_events(int fd, vector<int> wd, int argc)
                 e.filetype = "dir";
             else
                 e.filetype = "file";
-            return e;
+            return Result<_i_event>::Ok(e);
 
             ptr += sizeof(struct inotify_event) + event->len;
             if (i <= argc)
                 i++;
         }
     }
-    return {};
+    return Result<_i_event>::Err(ErrorCode::UNKNOWN, "Error: empty event");
 }
 
-bool FileWatcher::add_path(string &arg)
+Result<void> FileWatcher::add_path(string &arg)
 {
     lock_guard<mutex> lock(registry_mutex);
     int wd = inotify_add_watch(inotify_fd, arg.c_str(),
                                IN_ACCESS | IN_CREATE | IN_DELETE | IN_MODIFY);
     if (wd == -1)
-        return false;
+        return Result<void>::Err(
+            ErrorCode::SYSTEM_IO_ERROR,
+            "Error: inotify_add_watch failure");
     watch_registry[wd] = arg;
     r_watch_registry[arg] = wd;
-    return true;
+    return Result<void>::Ok();
 }
 
-bool FileWatcher::remove_path(string &arg)
+Result<void> FileWatcher::remove_path(string &arg)
 {
     lock_guard<mutex> lock(registry_mutex);
     int _r_wd = r_watch_registry[arg];
     inotify_rm_watch(inotify_fd, _r_wd);
     watch_registry.erase(_r_wd);
     r_watch_registry.erase(arg);
-    return true;
+    return Result<void>::Ok();
 }
 
-void FileWatcher::on_event(uint32_t event_mask, WatchCallback callback)
+Result<void> FileWatcher::link_event(uint32_t event_mask, WatchCallback callback)
 {
     lock_guard<mutex> lock(registry_mutex);
-    event_callbacks[event_mask] = callback;
+    vector<WatchCallback> temp_cb = event_callbacks[event_mask];
+    for(auto &cb : temp_cb)
+    {
+        if(cb == callback)
+        {
+            return Result<void>::Err(
+                ErrorCode::EXISTING_VALUE,
+                "Error: event already linked with callback"
+            );
+        }
+    }
+    event_callbacks[event_mask].push_back(callback);
+    return Result<void>::Ok();
 }
 
-void FileWatcher::event_loop(int timeout)
+Result<void> FileWatcher::unlink_event(uint32_t event_mask, WatchCallback callback)
+{
+    if (event_callbacks.find(event_mask) == event_callbacks.end())
+    {
+        return Result<void>::Err(
+            ErrorCode::EVENT_NOT_FOUND,
+            "Error: no such event"
+        );
+    }
+
+    for (auto it = event_callbacks[event_mask].begin(); it != event_callbacks[event_mask].end(); it++)
+    {
+        if (*it == callback)
+        {
+            event_callbacks[event_mask].erase(it);
+            return Result<void>::Ok();
+        }
+    }
+}
+
+Result<void> FileWatcher::event_loop(int timeout)
 {
     while (isWatching)
     {
@@ -127,7 +165,9 @@ void FileWatcher::event_loop(int timeout)
                 continue;
             else
             {
-                throw runtime_error("Poll Error");
+                return Result<void>::Err(
+                    ErrorCode::POLL_ERR,
+                    "Error: polling error");
             }
         }
 
@@ -137,7 +177,7 @@ void FileWatcher::event_loop(int timeout)
         if (fd[0].revents & POLLIN)
         {
             _i_event e;
-            WatchCallback callback;
+            vector<WatchCallback> callback;
             {
                 lock_guard<mutex> lock(registry_mutex);
 
@@ -146,18 +186,28 @@ void FileWatcher::event_loop(int timeout)
                 {
                     _wd_keys.push_back(wd);
                 }
-                e = handle_events(fd[0].fd, _wd_keys, watch_registry.size());
+                auto _temp_e = handle_events(fd[0].fd, _wd_keys, watch_registry.size());
+                if (_temp_e.isErr())
+                {
+                    return Result<void>::Err(_temp_e.unwrapErr());
+                }
+
+                e = _temp_e.unwrap();
                 callback = event_callbacks[e.event_mask];
             }
-            if (callback)
+            if (!callback.empty())
             {
-                callback(e);
+                for(auto &cb : callback)
+                {
+                    cb(e);
+                }
             }
         }
     }
+    return Result<void>::Ok();
 }
 
-void FileWatcher::start(int timeout)
+Result<void> FileWatcher::start(int timeout)
 {
     if (timeout < 10)
     {
@@ -166,14 +216,26 @@ void FileWatcher::start(int timeout)
 
     isWatching = true;
     background_thread = std::thread(&FileWatcher::event_loop, this, timeout);
-    return;
+    return Result<void>::Ok();
 }
 
-void FileWatcher::stop()
+Result<void> FileWatcher::stop()
 {
     isWatching = false;
     if (background_thread.joinable())
     {
         background_thread.join();
     }
+    return Result<void>::Ok();
+}
+
+Result<vector<string>> FileWatcher::get_watch_list()
+{
+    lock_guard<mutex> lock(registry_mutex);
+    vector<string> list;
+    for (auto &[wd, path] : watch_registry)
+    {
+        list.push_back(path);
+    }
+    return Result<vector<string>>::Ok(list);
 }

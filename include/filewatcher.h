@@ -21,9 +21,13 @@
 #include <mutex>
 #include <atomic>
 
+#include "error/result.h"
+#include "error/error.h"
+
 namespace l_fw
 {
-    struct _i_event {
+    struct _i_event
+    {
         int wd;
         std::string filetype;
         std::string path;
@@ -39,15 +43,17 @@ namespace l_fw
         struct pollfd fd[1];
         nfds_t nfds;
 
-        using WatchCallback = std::function<void(_i_event)>;
-        std::unordered_map<uint32_t, WatchCallback> event_callbacks;
+        using WatchCallback = void(*)(_i_event);
+
+        std::unordered_map<uint32_t, std::vector<WatchCallback>> event_callbacks;
+        int next_callback_id = 0;
 
         std::mutex registry_mutex;
         std::atomic<bool> isWatching{false};
         std::thread background_thread;
 
-        _i_event handle_events(int fd, std::vector<int> wd, int argc);
-        void event_loop(int timeout);
+        Result<_i_event> handle_events(int fd, std::vector<int> wd, int argc);
+        Result<void> event_loop(int timeout);
 
     public:
         // constructor
@@ -74,12 +80,13 @@ namespace l_fw
         FileWatcher &operator=(const FileWatcher &) = delete;
         bool is_running() const { return isWatching; }
 
-        bool add_path(std::string &arg);
-        bool remove_path(std::string &arg);
-        void start_polling();
-        void start(int timeout);
-        void stop();
+        Result<void> add_path(std::string &arg);
+        Result<void> remove_path(std::string &arg);
+        Result<void> start(int timeout);
+        Result<void> stop();
 
-        void on_event(uint32_t event_mask, WatchCallback callback);
+        Result<void> link_event(uint32_t event_mask, WatchCallback callback);
+        Result<void> unlink_event(uint32_t event_mask, WatchCallback callback);
+        Result<std::vector<std::string>> get_watch_list();
     };
 }

@@ -8,7 +8,8 @@
 #include <stdexcept>
 #include <fstream>
 
-#include "filewatcher.h"
+#include "../include/filewatcher.h"
+#include "../include/display.h"
 
 using namespace std;
 using namespace l_fw;
@@ -31,31 +32,39 @@ int main(int argc, char *argv[])
         string path(argv[i]);
         fw.add_path(path);
     }
-    fw.on_event(IN_MODIFY, print_modified);
+    fw.link_event(IN_MODIFY, print_modified);
     fw.start(100);
 
     string usr_input;
     while (usr_input != "exit")
     {
-        cout << "---------------------------------------------" << endl;
-        cout << "LINUX FILE WATCHER v1.0.0" << endl;
-        cout << "---------------------------------------------" << endl;
-        cout << "Input Value(add, remove, exit): ";
-        cin >> usr_input;
+        print_header();
+        usr_input = receive_input("Input Value(add, remove, exit): ");
+
         if (usr_input == "add")
         {
-            cout << "Input file/directory path: ";
-            string path;
-            cin >> path;
+            string path = receive_input("Input file/directory path: ");
             fw.add_path(path);
         }
         else if (usr_input == "remove")
         {
-            cout << "Input file/directory path: ";
-            string path;
-            cin >> path;
+            string path = receive_input("Input file/directory path: ");
             fw.remove_path(path);
-        } else {
+        } 
+        else if(usr_input == "list")
+        {
+            auto list = fw.get_watch_list();
+            if(list.isErr())
+            {
+                printf(list.getErrMessage().c_str());
+                return 0;
+            }
+
+            print_list("ALL WATCHED FILES", list.unwrap());
+        }
+        else
+        {
+            if(usr_input == "exit") continue;
             cerr << "INVALID INPUT" << endl;
         }
     }
