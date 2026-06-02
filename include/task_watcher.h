@@ -32,7 +32,8 @@ namespace l_fw
             TaskWatcher(const std::string& task_name, const std::string& working_directory);
             ~TaskWatcher();
 
-            Result<void> alter_task_name(std::string &task_name);
+            Result<void> change_task_name(std::string &task_name);
+            Result<void> change_working_directory(std::string &working_directory);
             Result<void> add_command(std::string &command);
             Result<void> delete_command(std::string &command);
 

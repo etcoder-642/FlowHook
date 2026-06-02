@@ -21,9 +21,15 @@ namespace l_fw
         is_running = false;
     }
 
-    Result<void> TaskWatcher::alter_task_name(string &task_name)
+    Result<void> TaskWatcher::change_task_name(string &task_name)
     {
         task.name = task_name;
+        return Result<void>::Ok();
+    }
+
+    Result<void> TaskWatcher::change_working_directory(string &working_directory)
+    {
+        task.working_directory = working_directory;
         return Result<void>::Ok();
     }
 

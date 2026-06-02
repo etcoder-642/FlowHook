@@ -15,27 +15,23 @@
 using namespace std;
 using namespace l_fw;
 
-
-TaskWatcher tw("test", "/home/mnasie/coding/C++/fitTrack");
+TaskWatcher tw("test", "/");
 
 void execute_cmd(const _i_event &e)
 {
     tw.execute(e);
 }
 
-int main(int argc, char *argv[])
+int main()
 {
+    print_header();
+    string project_name = receive_input("Input the watch instance name: ");
+    string file_path = receive_input("Input the directory path to watch: ");
+    tw.change_task_name(project_name);
+    tw.change_working_directory(file_path);
+    tw.add_path(file_path);
 
     string usr_input;
-    print_header();
-    string prompt = "g++ main.cpp -o main";
-    tw.add_command(prompt);
-    string success_cmd = "ffplay -nodisp -autoexit -loglevel quiet success.mp3";
-    tw.add_on_success(success_cmd);
-    string failure_cmd = "ffplay -nodisp -autoexit -loglevel quiet fahh_meme.mp3";
-    tw.add_on_failure(failure_cmd);
-    string path = "/home/mnasie/coding/C++/fitTrack/main.cpp";
-    tw.add_path(path);
 
     while (usr_input != "exit")
     {
