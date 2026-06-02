@@ -4,15 +4,13 @@
 #include <iostream>
 #include <unistd.h>
 #include <sys/inotify.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+
 #include <errno.h>
 #include <stdio.h>
 #include <poll.h>
 #include <stdlib.h>
 #include <map>
 #include <unordered_map>
-#include <stdexcept>
 
 #include <cstring>
 
@@ -49,6 +47,8 @@ Result<_i_event> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
         {
             event = reinterpret_cast<const struct inotify_event *>(ptr);
 
+            cout << "[FLOWHOOK]::handle_events:: event mask: " << event->mask << endl;
+
             if (event->mask & IN_CREATE)
             {
                 e.event_mask = IN_CREATE;
@@ -60,6 +60,10 @@ Result<_i_event> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
             else if (event->mask & IN_ACCESS)
             {
                 e.event_mask = IN_ACCESS;
+            }
+            else if(event->mask & IN_CLOSE_WRITE)
+            {
+                e.event_mask = IN_CLOSE_WRITE;
             }
             else if (event->mask & IN_MODIFY)
             {
@@ -81,11 +85,11 @@ Result<_i_event> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
                 e.filetype = "dir";
             else
                 e.filetype = "file";
-            return Result<_i_event>::Ok(e);
 
             ptr += sizeof(struct inotify_event) + event->len;
             if (i <= argc)
                 i++;
+            return Result<_i_event>::Ok(e);
         }
     }
     return Result<_i_event>::Err(ErrorCode::UNKNOWN, "Error: empty event");
@@ -95,7 +99,7 @@ Result<void> FileWatcher::add_path(string &arg)
 {
     lock_guard<mutex> lock(registry_mutex);
     int wd = inotify_add_watch(inotify_fd, arg.c_str(),
-                               IN_ACCESS | IN_CREATE | IN_DELETE | IN_MODIFY);
+                               IN_ACCESS | IN_CREATE | IN_DELETE | IN_MODIFY | IN_CLOSE_WRITE);
     if (wd == -1)
         return Result<void>::Err(
             ErrorCode::SYSTEM_IO_ERROR,
@@ -119,14 +123,14 @@ Result<void> FileWatcher::link_event(uint32_t event_mask, WatchCallback callback
 {
     lock_guard<mutex> lock(registry_mutex);
     vector<WatchCallback> temp_cb = event_callbacks[event_mask];
-    for(auto &cb : temp_cb)
+    cout << "[FLOWHOOK] Linking event " << event_mask << " to callback " << endl;
+    for (auto &cb : temp_cb)
     {
-        if(cb == callback)
+        if (cb == callback)
         {
             return Result<void>::Err(
                 ErrorCode::EXISTING_VALUE,
-                "Error: event already linked with callback"
-            );
+                "Error: event already linked with callback");
         }
     }
     event_callbacks[event_mask].push_back(callback);
@@ -139,8 +143,7 @@ Result<void> FileWatcher::unlink_event(uint32_t event_mask, WatchCallback callba
     {
         return Result<void>::Err(
             ErrorCode::EVENT_NOT_FOUND,
-            "Error: no such event"
-        );
+            "Error: no such event");
     }
 
     for (auto it = event_callbacks[event_mask].begin(); it != event_callbacks[event_mask].end(); it++)
@@ -151,12 +154,15 @@ Result<void> FileWatcher::unlink_event(uint32_t event_mask, WatchCallback callba
             return Result<void>::Ok();
         }
     }
+    return Result<void>::Err(ErrorCode::UNKNOWN, "Error: callback not found");
 }
 
 Result<void> FileWatcher::event_loop(int timeout)
 {
+    cout << "[FLOWHOOK] FileWatcher:BackgroundThread event poll starting... " << endl;
     while (isWatching)
     {
+        // cout << "[FLOWHOOK]:FileWatcher:BackgroundThread Polling... " << endl;
         poll_num = poll(fd, nfds, timeout);
 
         if (poll_num == -1)
@@ -186,19 +192,27 @@ Result<void> FileWatcher::event_loop(int timeout)
                 {
                     _wd_keys.push_back(wd);
                 }
+                cout << "[FLOWHOOK] Handle Events... " << endl;
                 auto _temp_e = handle_events(fd[0].fd, _wd_keys, watch_registry.size());
                 if (_temp_e.isErr())
                 {
-                    return Result<void>::Err(_temp_e.unwrapErr());
+                    continue;
                 }
 
+                cout << "[FLOWHOOK] unwrap handled event on success... " << endl;
                 e = _temp_e.unwrap();
                 callback = event_callbacks[e.event_mask];
             }
+            // debounce check
+            cout << "[FLOWHOOK]:FileWatcher:BackgroundThread Debouncing... " << endl;
+
+            cout << "[FLOWHOOK] callback size: " << callback.size() << endl;
             if (!callback.empty())
             {
-                for(auto &cb : callback)
+                cout << "[FLOWHOOK]::event_loop:: e.event_mask = " << e.event_mask << endl;
+                for (auto &cb : callback)
                 {
+                    cout << "[FLOWHOOK]:FileWatcher:BackgroundThread Calling Callback... " << endl;
                     cb(e);
                 }
             }
@@ -215,6 +229,7 @@ Result<void> FileWatcher::start(int timeout)
     }
 
     isWatching = true;
+    cout << "[FLOWHOOK]:FileWatcher Starting Background Thread... " << endl;
     background_thread = std::thread(&FileWatcher::event_loop, this, timeout);
     return Result<void>::Ok();
 }

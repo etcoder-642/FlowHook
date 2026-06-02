@@ -43,7 +43,7 @@ namespace l_fw
         struct pollfd fd[1];
         nfds_t nfds;
 
-        using WatchCallback = void(*)(_i_event);
+        using WatchCallback = void(*)(const _i_event&);
 
         std::unordered_map<uint32_t, std::vector<WatchCallback>> event_callbacks;
         int next_callback_id = 0;

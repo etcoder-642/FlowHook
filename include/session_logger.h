@@ -4,8 +4,6 @@
 #include <vector>
 #include <string>
 #include <iostream>
-#include <unistd.h>
-#include <sys/inotify.h>
 #include <fstream>
 
 #include "filewatcher.h"
@@ -13,7 +11,6 @@
 #include "json.hpp"
 #include "error/error.h"
 #include "error/result.h"
-#include "task_watcher.h"
 
 namespace l_fw
 {
@@ -22,12 +19,15 @@ namespace l_fw
         private:
             std::fstream file;
             json session;
+
+            bool is_running;
+            bool flushed;
         public:
             SessionLogger();
             ~SessionLogger();
 
             Result<void> start(std::string &task_name);
             Result<void> log_event(_i_event e, int success_code, std::string terminal_msg, std::vector<std::string> commands);
-            Result<void> stop(std::string &task_name);
+            Result<void> stop();
     };
 }

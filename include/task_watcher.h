@@ -13,11 +13,12 @@ namespace l_fw
 {
     struct Task {
         std::string name;
+        std::string working_directory;
         std::vector<std::string> commands;
         std::vector<std::string> paths;
 
-        std::string on_success;
-        std::string on_failure;
+        std::vector<std::string> on_success;
+        std::vector<std::string> on_failure;
     };
 
     class TaskWatcher {
@@ -26,21 +27,26 @@ namespace l_fw
             SessionLogger sl;
             Task task;
             
+            bool is_running;
         public:
-            TaskWatcher(const std::string& task_name){
-                task.name = task_name;
-            }
+            TaskWatcher(const std::string& task_name, const std::string& working_directory);
             ~TaskWatcher();
-            Result<void> alter_task_name(std::string &task_name);
 
+            Result<void> alter_task_name(std::string &task_name);
             Result<void> add_command(std::string &command);
             Result<void> delete_command(std::string &command);
+
+            Result<void> add_on_success(std::string &command);
+            Result<void> delete_on_success(std::string &command);
+
+            Result<void> add_on_failure(std::string &command);
+            Result<void> delete_on_failure(std::string &command);
 
             Result<void> add_path(std::string &path);
             Result<void> delete_path(std::string &path);
             
             Result<void> execute(const _i_event &e);
-            Result<void> start();
-            Result<void> stop();
+            Result<void> start(void(*callback)(const _i_event &e));
+            Result<void> stop(void(*callback)(const _i_event &e));
     };
 }

@@ -10,8 +10,12 @@ namespace l_fw
     enum class ErrorCode
     {
         EVENT_NOT_FOUND,
+        COMMAND_NOT_FOUND,
         EXISTING_VALUE,
+        ALREADY_RUNNING,
+        NOT_RUNNING,
         POLL_ERR,
+        PIPE_ERR,
         SYSTEM_IO_ERROR,
         UNKNOWN
     };
