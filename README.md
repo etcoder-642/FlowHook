@@ -1,4 +1,4 @@
-# FlowHook - Asynchronous C++ Automation Engine
+# FlowHook - Asynchronous Build Automation Engine
 
 FlowHook is a multi-threaded, Linux-native automation engine that eliminates manual compile-and-run workflows by watching filesystem events and executing build commands automatically.
 
@@ -39,7 +39,7 @@ sudo cp -r json/include/nlohmann /usr/local/include/
 ### 2. Clone and Build
 
 ```bash
-git clone https://github.com/yourusername/flowhook.git
+git clone https://github.com/etcoder-642/FlowHook.git
 cd flowhook
 make
 ```
@@ -71,6 +71,18 @@ flowhook/
 
 ## Usage
 
+### Visual Demo
+
+1. *visual demo showing how to setup and run some custom commands of FlowHook initially*
+  <img width="927" height="320" alt="image" src="https://github.com/user-attachments/assets/60420145-72a8-4310-a5ee-d17b6a47a12b" />
+
+2. *visual demo showing list of all commands*
+   <img width="1751" height="540" alt="image" src="https://github.com/user-attachments/assets/4a38b09e-937d-4d4e-a2a7-c883322736c3" />
+
+3. *visual demo showing the process starting a watch, stopping a watch and exiting interface*
+   <img width="914" height="232" alt="image" src="https://github.com/user-attachments/assets/e19abe59-6d8f-4a9f-b87b-61fe73d375b6" />
+
+
 ### Basic Workflow
 
 1. **Start FlowHook**
@@ -83,18 +95,20 @@ flowhook/
    - Enter directory path to monitor (e.g., "/home/user/project/src")
 
 3. **Add Commands**
+   *it is recommended you add build commands only here*
    ```
    add-command
    > g++ -Wall -o program main.cpp
    ```
 
-4. **Add Paths to Watch**
+5. **Add Paths to Watch**
+   *if you want to add other files to watch other than the one you entered initially, it is recommended you add directory paths only*
    ```
    add-path
    > /home/user/project/src
    ```
 
-5. **Add Hook Scripts (Optional)**
+7. **Add Hook Scripts (Optional)**
    ```
    add-on-success
    > echo "Build successful!"
@@ -103,10 +117,18 @@ flowhook/
    > notify-send "Build failed!"
    ```
 
-6. **Start Monitoring**
+8. **Start Monitoring**
    ```
    start
    ```
+9. **Stop Monitoring**
+  ```
+    stop`
+  ```
+10. **Exit interface**
+  ```
+exit
+``` 
 
 ### Command Reference
 
@@ -182,6 +204,8 @@ Each session generates a JSON log file named `{task_name}.log` containing:
 
 ## Thread Safety
 
+*things done to prevent race conditions when running program*
+
 - `std::mutex` guards watch registry operations
 - `std::atomic<bool>` controls background thread state
 - Independent thread for event polling with joinable cleanup
@@ -228,7 +252,7 @@ MIT License
 
 ## Author
 
-[mnasie | aspiring system engineer](https://github.com/mnasie)
+[mnasie](https://github.com/etcoder-642) // aspiring systems engineer
 
 ## Used Technologies
 
