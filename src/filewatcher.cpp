@@ -17,7 +17,7 @@
 #include <mutex>
 #include <thread>
 
-#include "./filewatcher.h"
+#include "../include/filewatcher.h" 
 
 using namespace l_fw;
 using namespace std;

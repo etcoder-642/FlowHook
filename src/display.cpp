@@ -11,7 +11,7 @@ namespace l_fw
     void print_header()
     {
         cout << "---------------------------------------------" << endl;
-        cout << "LINUX FILE WATCHER v1.0.0" << endl;
+        cout << "FLOWHOOK v1.0.0" << endl;
         cout << "---------------------------------------------" << endl;
     }
 

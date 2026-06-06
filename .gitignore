@@ -7,7 +7,6 @@
 *.o
 *.obj
 bin/*
-filewatcher
 assets/*.txt
 .vscode/
 
@@ -52,6 +51,7 @@ build-*/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
+CMakePresets.json
 install_manifest.txt
 compile_commands.json
 
