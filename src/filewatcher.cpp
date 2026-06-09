@@ -24,6 +24,7 @@ using namespace std;
 
 Result<_i_event> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
 {
+    cout << "[FLOWHOOK] FileWatcher::handle_events:: handling detected events... " << endl;
     _i_event e;
     const struct inotify_event *event;
     char buffer[4096];
@@ -49,19 +50,7 @@ Result<_i_event> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
 
             cout << "[FLOWHOOK]::handle_events:: event mask: " << event->mask << endl;
 
-            if (event->mask & IN_CREATE)
-            {
-                e.event_mask = IN_CREATE;
-            }
-            else if (event->mask & IN_DELETE)
-            {
-                e.event_mask = IN_DELETE;
-            }
-            else if (event->mask & IN_ACCESS)
-            {
-                e.event_mask = IN_ACCESS;
-            }
-            else if(event->mask & IN_CLOSE_WRITE)
+            if(event->mask & IN_CLOSE_WRITE)
             {
                 e.event_mask = IN_CLOSE_WRITE;
             }

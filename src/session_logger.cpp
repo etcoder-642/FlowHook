@@ -23,20 +23,20 @@ namespace l_fw
         stop();
     }
 
-    Result<void> SessionLogger::start(string &task_name)
+    Result<void> SessionLogger::start(string &file_path)
     {
         if(is_running)
         {
             return Result<void>::Err(ErrorCode::ALREADY_RUNNING, "Error: session logger already running");
         }
-        cout << "[FLOWHOOK] Starting session logger... " << task_name << endl;
-        string _file_name = task_name + ".log";
+        cout << "[FLOWHOOK] Starting session logger... " << file_path << endl;
+        string _file_name = file_path + ".log";
         file.open(_file_name, ios::out | ios::app);
         if (!file.is_open())
         {
             return Result<void>::Err(ErrorCode::SYSTEM_IO_ERROR, "Error: opening log file");
         }
-        session["task_name"] = task_name;
+        session["task_name"] = file_path;
 
         auto now = std::chrono::system_clock::now();
         std::time_t now_time = std::chrono::system_clock::to_time_t(now);

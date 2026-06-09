@@ -25,11 +25,25 @@ void execute_cmd(const _i_event &e)
 int main()
 {
     print_header();
-    string project_name = receive_input("Input the watch instance name: ");
-    string file_path = receive_input("Input the directory path to watch: ");
-    tw.change_task_name(project_name);
-    tw.change_working_directory(file_path);
-    tw.add_path(file_path);
+    cout << "FOR TESTING PURPOSES ONLY" << endl;
+    string temp_task_name = "fitTrack";
+    string temp_working_directory = "/home/mnasie/coding/C++/fitTrack";
+    string temp_command = "g++ main.cpp -o main";
+    string temp_success_cmd = "ffplay -nodisp -autoexit -loglevel quiet success.mp3";
+    string temp_failure_cmd = "ffplay -nodisp -autoexit -loglevel quiet fahh_meme.mp3";
+
+    tw.change_task_name(temp_task_name);
+    tw.change_working_directory(temp_working_directory);
+    tw.add_path(temp_working_directory);
+    tw.add_command(temp_command);
+    tw.add_on_success(temp_success_cmd);
+    tw.add_on_failure(temp_failure_cmd);
+
+    // string project_name = receive_input("Input the watch instance name: ");
+    // string file_path = receive_input("Input the directory path to watch: ");
+    // tw.change_task_name(project_name);
+    // tw.change_working_directory(file_path);
+    // tw.add_path(file_path);
 
     string usr_input;
 

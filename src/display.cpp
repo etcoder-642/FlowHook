@@ -10,18 +10,17 @@ namespace l_fw
 {
     void print_header()
     {
-        cout << "---------------------------------------------" << endl;
-        cout << "FLOWHOOK v1.0.0" << endl;
-        cout << "---------------------------------------------" << endl;
+        cout << "===================================================" << endl;
+        cout << "------------  FLOWHOOK v0.0.1  -------------------" << endl;
+        cout << "===================================================" << endl;
     }
 
     string receive_input(const string &msg)
     {
-        cout << "---------------------------------------------" << endl;
         cout << msg;
-        string usr_choice;
-        getline(cin, usr_choice);
-        return usr_choice;
+        string text_buffer;
+        getline(cin, text_buffer);
+        return text_buffer;
     }
 
     void print_list(const string &msg, const vector<string> &list)

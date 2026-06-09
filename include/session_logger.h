@@ -26,7 +26,7 @@ namespace l_fw
             SessionLogger();
             ~SessionLogger();
 
-            Result<void> start(std::string &task_name);
+            Result<void> start(std::string &file_path);
             Result<void> log_event(_i_event e, int success_code, std::string terminal_msg, std::vector<std::string> commands);
             Result<void> stop();
     };
