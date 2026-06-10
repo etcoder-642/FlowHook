@@ -7,6 +7,7 @@
 #include "session_logger.h"
 #include "config_manager.h"
 #include "error/result.h"
+#include "types.h"
 
 namespace flowhook {
     class FlowHookCore {

@@ -6,30 +6,10 @@
 
 #include "filewatcher.h"
 #include "session_logger.h"
+#include "types.h"
 
 namespace flowhook
 {
-    struct Task
-    {
-        std::string name;
-        std::string working_directory;
-        std::vector<std::string> commands;
-        std::vector<std::string> paths;
-
-        std::vector<std::string> on_success;
-        std::vector<std::string> on_failure;
-        bool isActive;
-    };
-
-    struct ExecutionResult
-    {
-        int id;
-        int exit_code;
-        WatchEvent _event;
-        std::string log;
-        std::vector<std::string> build_commands;
-    };
-
     class TaskRunner
     {
     private:

@@ -19,41 +19,10 @@
 #include "error/result.h"
 #include "error/error.h"
 #include "task_runner.h"
+#include "types.h"
 
 namespace flowhook
 {
-    struct WatchEvent
-    {
-        int wd;
-        std::string filetype;
-        std::string path;
-        uint32_t event_mask;
-    };
-
-    struct WatchCallback
-    {
-        TaskRunner *ptr;
-        Result<void> (TaskRunner::*handler)(const WatchEvent &e) = nullptr;
-        Result<void> (*raw_callback)(const WatchEvent &e) = nullptr;
-
-        bool operator==(const WatchCallback &o) const
-        {
-            return ptr == o.ptr && handler == o.handler && raw_callback == o.raw_callback;
-        }
-
-        Result<void> invoke(const WatchEvent &e) const
-        {
-            if (ptr == nullptr)
-            {
-                return raw_callback(e);
-            }
-            else
-            {
-                return (ptr->*handler)(e);
-            }
-        }
-    };
-
     class FileWatcher
     {
     private:
