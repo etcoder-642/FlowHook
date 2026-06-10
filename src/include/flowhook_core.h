@@ -11,6 +11,7 @@
 namespace flowhook {
     class FlowHookCore {
         private:
+            ConfigManager config_manager;
             std::vector<TaskRunner> task_runners;
         public:
             FlowHookCore();
@@ -30,5 +31,15 @@ namespace flowhook {
 
             Result<void> start_active();
             Result<void> stop_active();
+
+            Result<void> create_config_file();
+            Result<void> delete_config_file();
+
+            Result<void> log_task(const Task &task);
+            Result<void> update_task(const Task &task);
+            Result<void> log_task_inbatch(const std::vector<Task> &tasks);
+            Result<void> delete_task(const Task &task);
+
+            std::vector<Task> get_tasks() const;
     };
 }

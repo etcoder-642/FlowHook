@@ -164,4 +164,44 @@ namespace flowhook {
             }
         }
     }
+
+    Result<void> FlowHookCore::create_config_file()
+    {
+        return config_manager.init();
+    }
+
+    Result<void> FlowHookCore::delete_config_file()
+    {
+        return config_manager.purge_config();
+    }
+
+    Result<void> FlowHookCore::log_task(const Task &task)
+    {
+        return config_manager.log_task(task);
+    }
+
+    Result<void> FlowHookCore::update_task(const Task &task)
+    {
+        return config_manager.update_task(task);
+    }
+
+    Result<void> FlowHookCore::log_task_inbatch(const std::vector<Task> &tasks)
+    {
+        return config_manager.log_task_inbatch(tasks);
+    }
+
+    Result<void> FlowHookCore::delete_task(const Task &task)
+    {
+        return config_manager.delete_task(task);
+    }
+
+    std::vector<Task> FlowHookCore::get_tasks() const
+    {
+        vector<Task> tasks;
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            tasks.push_back(it->get_task());
+        }
+        return tasks;
+    }
 }

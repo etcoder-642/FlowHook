@@ -51,6 +51,7 @@ namespace flowhook
 
         std::string get_task_name() const { return task.name; }
         std::string get_working_directory() const { return task.working_directory; }
+        Task get_task() const { return task; }
 
         bool is_active() const { return task.isActive; }
         void activate() { task.isActive = true; }
