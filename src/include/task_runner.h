@@ -4,14 +4,14 @@
 #include <vector>
 #include <string>
 
-
 #include "filewatcher.h"
 #include "display.h"
 #include "session_logger.h"
 
 namespace flowhook
 {
-    struct Task {
+    struct Task
+    {
         std::string name;
         std::string working_directory;
         std::vector<std::string> commands;
@@ -22,50 +22,61 @@ namespace flowhook
         bool isActive;
     };
 
-    class TaskRunner {
-        private:
-            FileWatcher* fw = nullptr;
-            SessionLogger sl;
-            Task task;
-            std::vector<WatchCallback> callbacks;
-            
-            bool is_running;
-            bool flushed;
-            TaskRunner() = default;
-            bool is_init = false;
-        public:
-            Result<void> init(const std::string& task_name, const std::string& working_directory);
-            ~TaskRunner();
+    struct ExecutionResult
+    {
+        int id;
+        int exit_code;
+        WatchEvent _event;
+        string log;
+        vector<string> build_commands;
+    };
 
-            std::string get_task_name() const { return task.name; }
-            std::string get_working_directory() const { return task.working_directory; }
+    class TaskRunner
+    {
+    private:
+        FileWatcher *fw = nullptr;
+        SessionLogger sl;
+        Task task;
+        std::vector<WatchCallback> callbacks;
 
-            bool is_active() const { return task.isActive; }
-            void activate() { task.isActive = true; }
-            void deactivate() { task.isActive = false; }
+        bool is_running;
+        bool flushed;
+        TaskRunner() = default;
+        bool is_init = false;
+        int execution_id = 0;
 
-            Result<void> change_task_name(std::string &task_name);
-            Result<void> change_working_directory(std::string &working_directory);
-            Result<void> add_command(std::string &command);
-            Result<void> delete_command(std::string &command);
+    public:
+        Result<void> init(const std::string &task_name, const std::string &working_directory);
+        ~TaskRunner();
 
-            Result<void> add_on_success(std::string &command);
-            Result<void> delete_on_success(std::string &command);
+        std::string get_task_name() const { return task.name; }
+        std::string get_working_directory() const { return task.working_directory; }
 
-            Result<void> add_on_failure(std::string &command);
-            Result<void> delete_on_failure(std::string &command);
+        bool is_active() const { return task.isActive; }
+        void activate() { task.isActive = true; }
+        void deactivate() { task.isActive = false; }
 
-            Result<void> add_path(std::string &path);
-            Result<void> delete_path(std::string &path);
+        Result<void> change_task_name(std::string &task_name);
+        Result<void> change_working_directory(std::string &working_directory);
+        Result<void> add_command(std::string &command);
+        Result<void> delete_command(std::string &command);
 
-            Result<void> add_callback(WatchCallback callback);
-            Result<void> delete_callback(WatchCallback callback);
+        Result<void> add_on_success(std::string &command);
+        Result<void> delete_on_success(std::string &command);
 
-            Result<void> flush();
+        Result<void> add_on_failure(std::string &command);
+        Result<void> delete_on_failure(std::string &command);
 
-            
-            Result<void> execute(const WatchEvent &e);
-            Result<void> start();
-            Result<void> stop();
+        Result<void> add_path(std::string &path);
+        Result<void> delete_path(std::string &path);
+
+        Result<void> add_callback(WatchCallback callback);
+        Result<void> delete_callback(WatchCallback callback);
+
+        Result<void> flush();
+
+        Result<void> execute(const WatchEvent &e);
+        Result<void> start();
+        Result<void> stop();
     };
 }

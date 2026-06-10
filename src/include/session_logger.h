@@ -26,8 +26,8 @@ namespace flowhook
             SessionLogger();
             ~SessionLogger();
 
-            Result<void> start(std::string &file_path);
-            Result<void> log_event(WatchEvent e, int success_code, std::string terminal_msg, std::vector<std::string> commands);
+            Result<void> start(const std::string &file_path);
+            Result<void> log_execution(const ExecutionResult &execution_result);
             Result<void> stop();
     };
 }

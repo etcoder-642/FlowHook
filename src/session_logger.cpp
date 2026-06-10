@@ -7,8 +7,8 @@
 #include <sstream>
 #include <ctime>
 
-#include "../include/session_logger.h"
-#include "../include/macros.hpp"
+#include "include/session_logger.h"
+#include "include/macros.hpp"
 
 using namespace std;
 namespace flowhook
@@ -30,7 +30,7 @@ namespace flowhook
         }
     }
 
-    Result<void> SessionLogger::start(string &file_path)
+    Result<void> SessionLogger::start(const string &file_path)
     {
         if (is_running)
         {
@@ -60,13 +60,18 @@ namespace flowhook
         return Result<void>::Ok();
     }
 
-    Result<void> SessionLogger::log_event(WatchEvent e, int success_code, string terminal_msg, vector<string> commands)
+    Result<void> SessionLogger::log_execution(const ExecutionResult &execution_result)
     {
         if (session.empty())
         {
             return Result<void>::Err(FWError::make(
                 ErrorCode::SESSION_LOGGER_NOT_RUNNING, "Error: session logger not initialized"));
         }
+        WatchEvent e = execution_result._event;
+        string terminal_msg = execution_result.log;
+        vector<string> commands = execution_result.build_commands;
+        int success_code = execution_result.id;
+
         json event;
         event["event_type"] = "modify";
         event["file_path"] = e.path;

@@ -4,13 +4,13 @@
 #include <stdio.h>
 #include <filesystem>
 
-#include "../include/task_runner.h"
-#include "../include/macros.hpp"
+#include "include/task_runner.h"
+#include "include/macros.hpp"
 using namespace std;
 
 namespace flowhook
 {
-     Result<void> TaskRunner::init(const string &task_name, const string &working_directory)
+    Result<void> TaskRunner::init(const string &task_name, const string &working_directory)
     {
         fw->init();
         task.name = task_name;
@@ -229,7 +229,9 @@ namespace flowhook
                 }
             }
 
-            TEST(sl.log_event(e, true_exit_code, log_output, task.commands));
+            ExecutionResult result = {execution_id, true_exit_code, e, log_output, task.commands};
+            TEST(sl.log_execution(result));
+            execution_id++;
         }
 
         return Result<void>::Ok();
