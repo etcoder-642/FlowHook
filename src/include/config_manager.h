@@ -16,9 +16,11 @@ namespace flowhook
             json config_obj = json::object();
 
             Result<json> convert_task_to_json(const Task &task);
+            bool isflushed;
         public:
             ConfigManager();
             ~ConfigManager();
+            bool is_flushed() const { return isflushed; }
 
             Result<void> init();
             Result<void> log_task(const Task &task);
@@ -27,5 +29,6 @@ namespace flowhook
             Result<void> log_task_inbatch(const std::vector<Task> &tasks);
             Result<void> delete_task(const Task &task);
             Result<std::vector<Task>> get_tasks();
+            Result<void> flush();
     };
 }

@@ -6,9 +6,8 @@
 #include <fstream>
 
 #include "filewatcher.h"
-#include "display.h"
+#include "task_runner.h"
 #include "json.hpp"
-#include "error/error.h"
 #include "error/result.h"
 
 namespace flowhook

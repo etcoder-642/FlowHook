@@ -5,7 +5,6 @@
 #include <string>
 
 #include "filewatcher.h"
-#include "display.h"
 #include "session_logger.h"
 
 namespace flowhook
@@ -27,8 +26,8 @@ namespace flowhook
         int id;
         int exit_code;
         WatchEvent _event;
-        string log;
-        vector<string> build_commands;
+        std::string log;
+        std::vector<std::string> build_commands;
     };
 
     class TaskRunner
@@ -41,10 +40,10 @@ namespace flowhook
 
         bool is_running;
         bool flushed;
-        TaskRunner() = default;
         bool is_init = false;
         int execution_id = 0;
 
+        TaskRunner() = default;
     public:
         Result<void> init(const std::string &task_name, const std::string &working_directory);
         ~TaskRunner();
@@ -71,8 +70,8 @@ namespace flowhook
         Result<void> add_path(std::string &path);
         Result<void> delete_path(std::string &path);
 
-        Result<void> add_callback(WatchCallback callback);
-        Result<void> delete_callback(WatchCallback callback);
+        Result<void> add_callback(const WatchCallback &callback);
+        Result<void> delete_callback(const WatchCallback &callback);
 
         Result<void> flush();
 
