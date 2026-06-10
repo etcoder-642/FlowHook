@@ -17,8 +17,8 @@
 #include <mutex>
 #include <thread>
 
-#include "../include/filewatcher.h"
-#include "../include/macros.hpp"
+#include "include/filewatcher.h"
+#include "include/macros.hpp"
 
 using namespace flowhook;
 using namespace std;

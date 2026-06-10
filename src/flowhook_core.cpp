@@ -2,10 +2,10 @@
 #include <string>
 #include <filesystem>
 
-#include "../include/flowhook_core.h"
-#include "../include/error/result.h"
-#include "../include/task_runner.h"
-#include "../include/macros.hpp"
+#include "include/flowhook_core.h"
+#include "include/error/result.h"
+#include "include/task_runner.h"
+#include "include/macros.hpp"
 
 /*
 Unsolved TODOs:

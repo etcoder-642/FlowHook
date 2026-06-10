@@ -5,12 +5,12 @@
 #include <stdio.h>
 #include <fstream>
 
-#include "../include/filewatcher.h"
-#include "../include/display.h"
-#include "../include/task_runner.h"
-#include "../include/session_logger.h"
-#include "../include/error/error.h"
-#include "../include/error/result.h"
+#include "include/filewatcher.h"
+#include "include/display.h"
+#include "include/task_runner.h"
+#include "include/session_logger.h"
+#include "include/error/error.h"
+#include "include/error/result.h"
 
 using namespace std;
 using namespace flowhook;
@@ -19,11 +19,11 @@ using namespace flowhook;
    THINGS TO WORK ON tomorrow:
    1. fix todos listed in flowhook_core.cpp | DONE
    2. error handling
-      - standardize ErrorCode enum (group by category, fix duplicate COMMAND_NOT_FOUND)
-      - make error struct more robust
-      - add stack traceability to error struct
-      - ensure every method handles errors
-      - add TRY macro
+      - standardize ErrorCode enum (group by category, fix duplicate COMMAND_NOT_FOUND) | DONE
+      - make error struct more robust | DONE
+      - add stack traceability to error struct | DONE
+      - ensure every method handles errors | DONE
+      - add TRY macro | DONE
    3. add config_manager layer
    4. add some test cases using utest.h
    5. split CMakeLists.txt
