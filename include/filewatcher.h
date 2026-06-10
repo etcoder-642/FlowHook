@@ -32,24 +32,33 @@ namespace flowhook
 
     struct WatchCallback
     {
-        TaskRunner* ptr;
-        Result<void> (TaskRunner::*handler)(const WatchEvent &e);
+        TaskRunner *ptr;
+        Result<void> (TaskRunner::*handler)(const WatchEvent &e) = nullptr;
+        Result<void> (*raw_callback)(const WatchEvent &e) = nullptr;
 
         bool operator==(const WatchCallback &o) const
         {
-            return ptr == o.ptr && handler == o.handler;
+            return ptr == o.ptr && handler == o.handler && raw_callback == o.raw_callback;
         }
 
-        void invoke(const WatchEvent &e) const
+        Result<void> invoke(const WatchEvent &e) const
         {
-            (ptr->*handler)(e);
+            if (ptr == nullptr)
+            {
+                return raw_callback(e);
+            }
+            else
+            {
+                return (ptr->*handler)(e);
+            }
         }
     };
 
     class FileWatcher
     {
     private:
-        int inotify_fd, poll_num;
+        int inotify_fd = -1;
+        int poll_num;
         std::unordered_map<int, std::string> watch_registry;
         std::unordered_map<std::string, int> r_watch_registry;
         struct pollfd fd[1];
@@ -65,24 +74,17 @@ namespace flowhook
         Result<WatchEvent> handle_events(int fd, std::vector<int> wd, int argc);
         Result<void> event_loop(int timeout);
 
+        FileWatcher() = default;
+
     public:
-        // constructor
-        FileWatcher()
-        {
-            inotify_fd = inotify_init1(IN_NONBLOCK);
-            if (inotify_fd == -1)
-            {
-                throw std::runtime_error("inotify_init1 failed");
-            }
-            nfds = 1;
-            fd[0].fd = inotify_fd;
-            fd[0].events = POLLIN;
-        }
+        // Factory Function constuctor
+        Result<void> init();
 
         // destructor
         ~FileWatcher()
         {
-            close(inotify_fd);
+            if(inotify_fd != -1)
+                close(inotify_fd);
         }
 
         // prevent copy

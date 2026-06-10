@@ -2,39 +2,60 @@
 #include <vector>
 #include <string>
 #include <stdio.h>
+#include <filesystem>
 
 #include "../include/task_runner.h"
+#include "../include/macros.hpp"
 using namespace std;
 
 namespace flowhook
 {
-    TaskRunner::TaskRunner(const string &task_name, const string &working_directory)
+     Result<void> TaskRunner::init(const string &task_name, const string &working_directory)
     {
+        fw->init();
         task.name = task_name;
         task.working_directory = working_directory;
+        flushed = false;
+        is_running = false;
     }
 
     TaskRunner::~TaskRunner()
     {
-        fw.stop();
+        fw->stop();
         sl.stop();
         is_running = false;
     }
 
     Result<void> TaskRunner::change_task_name(string &task_name)
     {
+        if(task.name == task_name)
+        {
+            return Result<void>::Err(FWError::make(
+                ErrorCode::TASK_ALREADY_EXISTS, "Error: task name already exists"));
+        }
         task.name = task_name;
         return Result<void>::Ok();
     }
 
     Result<void> TaskRunner::change_working_directory(string &working_directory)
     {
+        if(task.working_directory == working_directory)
+        {
+            return Result<void>::Err(FWError::make(
+                ErrorCode::PATH_ALREADY_EXISTS, "Error: working directory already exists"));
+        }
         task.working_directory = working_directory;
         return Result<void>::Ok();
     }
 
     Result<void> TaskRunner::add_command(string &command)
     {
+        if(command.empty())
+        {
+            return Result<void>::Err(FWError::make(
+                ErrorCode::COMMAND_EMPTY, "Error: command is empty"));
+        }
+
         task.commands.push_back(command);
         return Result<void>::Ok();
     }
@@ -50,12 +71,19 @@ namespace flowhook
             }
         }
 
-        cerr << "Error: command not found" << endl;
-        return Result<void>::Err(ErrorCode::COMMAND_NOT_FOUND, "Error: command not found");
+        return Result<void>::Err(FWError::make(ErrorCode::COMMAND_NOT_FOUND, "Error: command not found"));
     }
 
     Result<void> TaskRunner::add_path(string &path)
     {
+        for(auto it = task.paths.begin(); it != task.paths.end(); it++)
+        {
+            if(*it == path)
+            {
+                return Result<void>::Err(FWError::make(
+                    ErrorCode::PATH_ALREADY_EXISTS, "Error: path already exists"));
+            }
+        }
         task.paths.push_back(path);
         return Result<void>::Ok();
     }
@@ -70,11 +98,19 @@ namespace flowhook
                 return Result<void>::Ok();
             }
         }
-        return Result<void>::Err(ErrorCode::EVENT_NOT_FOUND, "Error: path not found");
+        return Result<void>::Err(FWError::make(ErrorCode::EVENT_NOT_FOUND, "Error: path not found"));
     }
 
     Result<void> TaskRunner::add_on_success(string &command)
     {
+        for(auto it = task.on_success.begin(); it != task.on_success.end(); it++)
+        {
+            if(*it == command)
+            {
+                return Result<void>::Err(FWError::make(
+                    ErrorCode::COMMAND_ALREADY_EXISTS, "Error: command already exists"));
+            }
+        }
         task.on_success.push_back(command);
         return Result<void>::Ok();
     }
@@ -91,11 +127,19 @@ namespace flowhook
         }
 
         cerr << "Error: command not found" << endl;
-        return Result<void>::Err(ErrorCode::COMMAND_NOT_FOUND, "Error: command not found");
+        return Result<void>::Err(FWError::make(ErrorCode::COMMAND_NOT_FOUND, "Error: command not found"));
     }
 
     Result<void> TaskRunner::add_on_failure(string &command)
     {
+        for(auto it = task.on_failure.begin(); it != task.on_failure.end(); it++)
+        {
+            if(*it == command)
+            {
+                return Result<void>::Err(FWError::make(
+                    ErrorCode::COMMAND_ALREADY_EXISTS, "Error: command already exists"));
+            }
+        }
         task.on_failure.push_back(command);
         return Result<void>::Ok();
     }
@@ -112,15 +156,14 @@ namespace flowhook
         }
 
         cerr << "Error: command not found" << endl;
-        return Result<void>::Err(ErrorCode::COMMAND_NOT_FOUND, "Error: command not found");
+        return Result<void>::Err(FWError::make(ErrorCode::COMMAND_NOT_FOUND, "Error: command not found"));
     }
 
     Result<void> TaskRunner::execute(const WatchEvent &e)
     {
         if (task.commands.empty())
         {
-            cerr << "Error: no commands to execute" << endl;
-            return Result<void>::Err(ErrorCode::COMMAND_NOT_FOUND, "Error: no commands to execute");
+            return Result<void>::Err(FWError::make(ErrorCode::COMMAND_EMPTY, "Error: no commands to execute"));
         }        
 
         for (auto &cmd : task.commands)
@@ -130,7 +173,7 @@ namespace flowhook
             if (fp == NULL)
             {
                 cerr << "Error: popen failure" << endl;
-                return Result<void>::Err(ErrorCode::PIPE_ERR, "Error: popen failure");
+                return Result<void>::Err(FWError::make(ErrorCode::SYS_PIPE_FAILED, "Error: popen failure"));
             }
 
             char buffer[128];
@@ -151,80 +194,100 @@ namespace flowhook
                     break;
                 }
             }
+            if(ferror(fp))
+            {
+                return Result<void>::Err(FWError::make(
+                    ErrorCode::SYS_IO_FAILED, "Error: reading from pipe failed"));
+            }
 
             int status = pclose(fp);
             int true_exit_code = -1;
             if(WIFEXITED(status)){
                 true_exit_code = WEXITSTATUS(status);
-            }else {
+            }else if(WIFSIGNALED(status)){
+                true_exit_code = -WTERMSIG(status);
+            } else {
                 true_exit_code = status;
             }
 
             if (true_exit_code != 0)
             {
-                for(auto &cmd : task.on_failure)
+                for(auto &cmd_i : task.on_failure)
                 {
-                    string exec_chain = "cd " + task.working_directory + " && timeout 15s " + cmd;
+                    string exec_chain = "cd " + task.working_directory + " && timeout 15s " + cmd_i;
                     system(exec_chain.c_str());
-                    cout << "[FLOWHOOK] Command " << cmd << " executed with exit code " << true_exit_code << endl;
+                    cout << "[FLOWHOOK] Command " << cmd_i << " executed with exit code " << true_exit_code << endl;
                 }
             }
             else 
             {
-                for(auto &cmd : task.on_success)
+                for(auto &cmd_i : task.on_success)
                 {
-                    string exec_chain = "cd " + task.working_directory + " && timeout 15s " + cmd;
+                    string exec_chain = "cd " + task.working_directory + " && timeout 15s " + cmd_i;
                     system(exec_chain.c_str());
-                    cout << "[FLOWHOOK] Command " << cmd << " executed with exit code " << true_exit_code << endl;
+                    cout << "[FLOWHOOK] Command " << cmd_i << " executed with exit code " << true_exit_code << endl;
                 }
             }
 
-            sl.log_event(e, true_exit_code, log_output, task.commands);
+            TEST(sl.log_event(e, true_exit_code, log_output, task.commands));
         }
 
         return Result<void>::Ok();
     }
 
+    Result<void> TaskRunner::add_callback(WatchCallback callback)
+    {
+        callbacks.push_back(callback);
+    }
+
+    Result<void> TaskRunner::flush()
+    {
+        if(flushed)
+        {
+            return Result<void>::Ok();
+        }
+        if(task.commands.empty())
+        {
+            cout << "[FLOWHOOK]:ERROR No commands to execute" << endl;
+            return Result<void>::Err(FWError::make(ErrorCode::COMMAND_NOT_FOUND, "Error: no commands to execute"));
+        }
+
+        if(task.paths.empty())
+        {
+            return Result<void>::Err(FWError::make(ErrorCode::EVENT_NOT_FOUND, "Error: no paths to watch"));
+        }
+
+        for (auto &path : task.paths)
+        {
+            TEST(fw->add_path(path));
+        }
+
+        for(auto &cb : callbacks)
+        {
+            TEST(fw->link_event(IN_CLOSE_WRITE, cb));
+        }
+        flushed = true;
+        return Result<void>::Ok();
+    }
 
     Result<void> TaskRunner::start()
     {
         if(is_running)
         {
-            cout << "[FLOWHOOK]:ERROR Task watcher already running" << endl;
-            return Result<void>::Err(ErrorCode::ALREADY_RUNNING, "Error: task watcher already running");
+            return Result<void>::Err(FWError::make(ErrorCode::TASK_ALREADY_RUNNING, "Error: task runner already running"));
         }
 
-        if(task.commands.empty())
-        {
-            cout << "[FLOWHOOK]:ERROR No commands to execute" << endl;
-            return Result<void>::Err(ErrorCode::COMMAND_NOT_FOUND, "Error: no commands to execute");
-        }
-
-        if(task.paths.empty())
-        {
-            cout << "[FLOWHOOK]:ERROR No paths to watch" << endl;
-            return Result<void>::Err(ErrorCode::EVENT_NOT_FOUND, "Error: no paths to watch");
-        }
-
-        cout << "[FLOWHOOK] Starting task: " << task.name << endl;
         string _file_path = task.working_directory + "/" + task.name;
         sl.start(_file_path);
 
-        for (auto &path : task.paths)
-        {
-            cout << "[FLOWHOOK] Setting up watch on " << path << endl;
-            fw.add_path(path);
-        }
 
         is_running = true;
-        cout << "[FLOWHOOK] Linking callback to event... " << endl;
+        TEST(flush());
 
-        callback = {this, &TaskRunner::execute};
-        fw.link_event(IN_CLOSE_WRITE, callback);
+        WatchCallback callback = {this, &TaskRunner::execute};
+        TEST(add_callback(callback));
 
-        cout << "[FLOWHOOK] Starting event loop... " << endl;
-        fw.start(100);
-        cout << "[FLOWHOOK] Task started successfully... " << endl;
+        TEST(fw->start(100));
         return Result<void>::Ok();
     }
 
@@ -232,12 +295,15 @@ namespace flowhook
     {
         if(!is_running)
         {
-            return Result<void>::Err(ErrorCode::NOT_RUNNING, "Error: task watcher not running");
+            return Result<void>::Err(ErrorCode::TASK_NOT_RUNNING, "Error: task watcher not running");
         }
 
-        fw.unlink_event(IN_CLOSE_WRITE, callback);
-        fw.stop();
-        sl.stop();
+        for(auto &cb : callbacks)
+        {
+            TEST(fw->unlink_event(IN_CLOSE_WRITE, cb));
+        }
+        TEST(fw->stop());
+        TEST(sl.stop());
         is_running = false;
         return Result<void>::Ok();
     }

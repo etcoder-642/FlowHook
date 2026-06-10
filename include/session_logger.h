@@ -18,7 +18,7 @@ namespace flowhook
     class SessionLogger {
         private:
             std::fstream file;
-            json session;
+            json session = json::object();
 
             bool is_running;
             bool flushed;

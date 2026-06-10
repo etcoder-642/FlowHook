@@ -30,11 +30,13 @@ using namespace flowhook;
       - separate library target from CLI target
       - wire tests target
    6. start working on the CLI layer
+   7. add IN_MOVED_TO and IN_MOVED_FROM events
 */
 
 int main()
 {
-    TaskRunner tw("test", "/");
+    TaskRunner* t;
+    t->init("test", "/");
     print_header();
     cout << "FOR TESTING PURPOSES ONLY" << endl;
     string temp_task_name = "fitTrack";
@@ -43,18 +45,18 @@ int main()
     string temp_success_cmd = "ffplay -nodisp -autoexit -loglevel quiet success.mp3";
     string temp_failure_cmd = "ffplay -nodisp -autoexit -loglevel quiet fahh_meme.mp3";
 
-    tw.change_task_name(temp_task_name);
-    tw.change_working_directory(temp_working_directory);
-    tw.add_path(temp_working_directory);
-    tw.add_command(temp_command);
-    tw.add_on_success(temp_success_cmd);
-    tw.add_on_failure(temp_failure_cmd);
+    t->change_task_name(temp_task_name);
+    t->change_working_directory(temp_working_directory);
+    t->add_path(temp_working_directory);
+    t->add_command(temp_command);
+    t->add_on_success(temp_success_cmd);
+    t->add_on_failure(temp_failure_cmd);
 
     // string project_name = receive_input("Input the watch instance name: ");
     // string file_path = receive_input("Input the directory path to watch: ");
-    // tw.change_task_name(project_name);
-    // tw.change_working_directory(file_path);
-    // tw.add_path(file_path);
+    // t->change_task_name(project_name);
+    // t->change_working_directory(file_path);
+    // t->add_path(file_path);
 
     string usr_input;
 
@@ -64,50 +66,50 @@ int main()
         if (usr_input == "add-command")
         {
             string path = receive_input("Input Command: ");
-            tw.add_command(path);
+            t->add_command(path);
         }
         else if (usr_input == "remove-command")
         {
             string path = receive_input("Input Command: ");
-            tw.delete_command(path);
+            t->delete_command(path);
         }
         else if (usr_input == "add-path")
         {
             string path = receive_input("Input file/directory path: ");
-            tw.add_path(path);
+            t->add_path(path);
         }
         else if (usr_input == "remove-path")
         {
             string path = receive_input("Input file/directory path: ");
-            tw.delete_path(path);
+            t->delete_path(path);
         }
         else if (usr_input == "add-on-success")
         {
             string command = receive_input("Input command: ");
-            tw.add_on_success(command);
+            t->add_on_success(command);
         }
         else if (usr_input == "remove-on-success")
         {
             string command = receive_input("Input command: ");
-            tw.delete_on_success(command);
+            t->delete_on_success(command);
         }
         else if (usr_input == "add-on-failure")
         {
             string command = receive_input("Input command: ");
-            tw.add_on_failure(command);
+            t->add_on_failure(command);
         }
         else if (usr_input == "remove-on-failure")
         {
             string command = receive_input("Input command: ");
-            tw.delete_on_failure(command);
+            t->delete_on_failure(command);
         }
         else if (usr_input == "start")
         {
-            tw.start();
+            t->start();
         }
         else if (usr_input == "stop")
         {
-            tw.stop();
+            t->stop();
         }
         else if (usr_input == "help")
         {

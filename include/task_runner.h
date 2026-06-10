@@ -24,14 +24,17 @@ namespace flowhook
 
     class TaskRunner {
         private:
-            FileWatcher fw;
+            FileWatcher* fw = nullptr;
             SessionLogger sl;
             Task task;
-            WatchCallback callback;
+            std::vector<WatchCallback> callbacks;
             
             bool is_running;
+            bool flushed;
+            TaskRunner() = default;
+            bool is_init = false;
         public:
-            TaskRunner(const std::string& task_name, const std::string& working_directory);
+            Result<void> init(const std::string& task_name, const std::string& working_directory);
             ~TaskRunner();
 
             std::string get_task_name() const { return task.name; }
@@ -54,6 +57,11 @@ namespace flowhook
 
             Result<void> add_path(std::string &path);
             Result<void> delete_path(std::string &path);
+
+            Result<void> add_callback(WatchCallback callback);
+            Result<void> delete_callback(WatchCallback callback);
+
+            Result<void> flush();
 
             
             Result<void> execute(const WatchEvent &e);
