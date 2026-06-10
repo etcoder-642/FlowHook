@@ -5,18 +5,29 @@
 #include <vector>
 #include <source_location>
 
-namespace l_fw
+namespace flowhook
 {
     enum class ErrorCode
     {
+        // Task life cycls
+        TASK_NOT_FOUND,
+        TASK_ALREADY_RUNNING,
+        TASK_NOT_RUNNING,
+        TASK_FULL,
+        TASK_NOT_ACTIVE,
+        TASK_ALREADY_ACTIVE,
+
+        // Config lookup errors
         EVENT_NOT_FOUND,
         COMMAND_NOT_FOUND,
-        EXISTING_VALUE,
-        ALREADY_RUNNING,
-        NOT_RUNNING,
-        POLL_ERR,
-        PIPE_ERR,
-        SYSTEM_IO_ERROR,
+        PATH_NOT_FOUND,
+        DUPLICATE_ENTRY,
+
+        // System/ OS Errors
+        SYS_POLL_FAILED,
+        SYS_PIPE_FAILED,
+        SYS_IO_FAILED,
+
         UNKNOWN
     };
 

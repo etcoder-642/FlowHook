@@ -9,7 +9,7 @@
 #include "display.h"
 #include "session_logger.h"
 
-namespace l_fw
+namespace flowhook
 {
     struct Task {
         std::string name;
@@ -19,18 +19,27 @@ namespace l_fw
 
         std::vector<std::string> on_success;
         std::vector<std::string> on_failure;
+        bool isActive;
     };
 
-    class TaskWatcher {
+    class TaskRunner {
         private:
             FileWatcher fw;
             SessionLogger sl;
             Task task;
+            WatchCallback callback;
             
             bool is_running;
         public:
-            TaskWatcher(const std::string& task_name, const std::string& working_directory);
-            ~TaskWatcher();
+            TaskRunner(const std::string& task_name, const std::string& working_directory);
+            ~TaskRunner();
+
+            std::string get_task_name() const { return task.name; }
+            std::string get_working_directory() const { return task.working_directory; }
+
+            bool is_active() const { return task.isActive; }
+            void activate() { task.isActive = true; }
+            void deactivate() { task.isActive = false; }
 
             Result<void> change_task_name(std::string &task_name);
             Result<void> change_working_directory(std::string &working_directory);
@@ -45,9 +54,10 @@ namespace l_fw
 
             Result<void> add_path(std::string &path);
             Result<void> delete_path(std::string &path);
+
             
-            Result<void> execute(const _i_event &e);
-            Result<void> start(void(*callback)(const _i_event &e));
-            Result<void> stop(void(*callback)(const _i_event &e));
+            Result<void> execute(const WatchEvent &e);
+            Result<void> start();
+            Result<void> stop();
     };
 }

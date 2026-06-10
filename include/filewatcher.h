@@ -1,21 +1,16 @@
 #pragma once
 
-#include <iostream>
 #include <vector>
 #include <string>
-#include <iostream>
+
 #include <unistd.h>
 #include <sys/inotify.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <stdio.h>
 #include <poll.h>
-#include <stdlib.h>
 
-#include <map>
 #include <unordered_map>
-#include <functional>
 #include <thread>
 #include <stdexcept>
 #include <mutex>
@@ -23,15 +18,32 @@
 
 #include "error/result.h"
 #include "error/error.h"
+#include "task_runner.h"
 
-namespace l_fw
+namespace flowhook
 {
-    struct _i_event
+    struct WatchEvent
     {
         int wd;
         std::string filetype;
         std::string path;
         uint32_t event_mask;
+    };
+
+    struct WatchCallback
+    {
+        TaskRunner* ptr;
+        Result<void> (TaskRunner::*handler)(const WatchEvent &e);
+
+        bool operator==(const WatchCallback &o) const
+        {
+            return ptr == o.ptr && handler == o.handler;
+        }
+
+        void invoke(const WatchEvent &e) const
+        {
+            (ptr->*handler)(e);
+        }
     };
 
     class FileWatcher
@@ -43,8 +55,6 @@ namespace l_fw
         struct pollfd fd[1];
         nfds_t nfds;
 
-        using WatchCallback = void(*)(const _i_event&);
-
         std::unordered_map<uint32_t, std::vector<WatchCallback>> event_callbacks;
         int next_callback_id = 0;
 
@@ -52,7 +62,7 @@ namespace l_fw
         std::atomic<bool> isWatching{false};
         std::thread background_thread;
 
-        Result<_i_event> handle_events(int fd, std::vector<int> wd, int argc);
+        Result<WatchEvent> handle_events(int fd, std::vector<int> wd, int argc);
         Result<void> event_loop(int timeout);
 
     public:

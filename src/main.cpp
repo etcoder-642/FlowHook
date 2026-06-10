@@ -7,23 +7,34 @@
 
 #include "../include/filewatcher.h"
 #include "../include/display.h"
-#include "../include/task_watcher.h"
+#include "../include/task_runner.h"
 #include "../include/session_logger.h"
 #include "../include/error/error.h"
 #include "../include/error/result.h"
 
 using namespace std;
-using namespace l_fw;
+using namespace flowhook;
 
-TaskWatcher tw("test", "/");
-
-void execute_cmd(const _i_event &e)
-{
-    tw.execute(e);
-}
+/*
+   THINGS TO WORK ON tomorrow:
+   1. fix todos listed in flowhook_core.cpp | DONE
+   2. error handling
+      - standardize ErrorCode enum (group by category, fix duplicate COMMAND_NOT_FOUND)
+      - make error struct more robust
+      - add stack traceability to error struct
+      - ensure every method handles errors
+      - add TRY macro
+   3. add config_manager layer
+   4. add some test cases using utest.h
+   5. split CMakeLists.txt
+      - separate library target from CLI target
+      - wire tests target
+   6. start working on the CLI layer
+*/
 
 int main()
 {
+    TaskRunner tw("test", "/");
     print_header();
     cout << "FOR TESTING PURPOSES ONLY" << endl;
     string temp_task_name = "fitTrack";
@@ -92,11 +103,11 @@ int main()
         }
         else if (usr_input == "start")
         {
-            tw.start(execute_cmd);
+            tw.start();
         }
         else if (usr_input == "stop")
         {
-            tw.stop(execute_cmd);
+            tw.stop();
         }
         else if (usr_input == "help")
         {
@@ -112,8 +123,7 @@ int main()
                 "start",
                 "stop",
                 "help",
-                "exit"
-            };
+                "exit"};
             print_list("--- COMMANDS ---\n", commands);
         }
         else if (usr_input == "exit")

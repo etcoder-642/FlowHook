@@ -12,7 +12,7 @@
 #include "error/error.h"
 #include "error/result.h"
 
-namespace l_fw
+namespace flowhook
 {
     using json = nlohmann::json;
     class SessionLogger {
@@ -27,7 +27,7 @@ namespace l_fw
             ~SessionLogger();
 
             Result<void> start(std::string &file_path);
-            Result<void> log_event(_i_event e, int success_code, std::string terminal_msg, std::vector<std::string> commands);
+            Result<void> log_event(WatchEvent e, int success_code, std::string terminal_msg, std::vector<std::string> commands);
             Result<void> stop();
     };
 }

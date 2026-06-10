@@ -3,43 +3,43 @@
 #include <string>
 #include <stdio.h>
 
-#include "../include/task_watcher.h"
-
+#include "../include/task_runner.h"
 using namespace std;
-namespace l_fw
+
+namespace flowhook
 {
-    TaskWatcher::TaskWatcher(const string &task_name, const string &working_directory)
+    TaskRunner::TaskRunner(const string &task_name, const string &working_directory)
     {
         task.name = task_name;
         task.working_directory = working_directory;
     }
 
-    TaskWatcher::~TaskWatcher()
+    TaskRunner::~TaskRunner()
     {
         fw.stop();
         sl.stop();
         is_running = false;
     }
 
-    Result<void> TaskWatcher::change_task_name(string &task_name)
+    Result<void> TaskRunner::change_task_name(string &task_name)
     {
         task.name = task_name;
         return Result<void>::Ok();
     }
 
-    Result<void> TaskWatcher::change_working_directory(string &working_directory)
+    Result<void> TaskRunner::change_working_directory(string &working_directory)
     {
         task.working_directory = working_directory;
         return Result<void>::Ok();
     }
 
-    Result<void> TaskWatcher::add_command(string &command)
+    Result<void> TaskRunner::add_command(string &command)
     {
         task.commands.push_back(command);
         return Result<void>::Ok();
     }
 
-    Result<void> TaskWatcher::delete_command(string &command)
+    Result<void> TaskRunner::delete_command(string &command)
     {
         for (auto it = task.commands.begin(); it != task.commands.end(); it++)
         {
@@ -54,13 +54,13 @@ namespace l_fw
         return Result<void>::Err(ErrorCode::COMMAND_NOT_FOUND, "Error: command not found");
     }
 
-    Result<void> TaskWatcher::add_path(string &path)
+    Result<void> TaskRunner::add_path(string &path)
     {
         task.paths.push_back(path);
         return Result<void>::Ok();
     }
 
-    Result<void> TaskWatcher::delete_path(string &path)
+    Result<void> TaskRunner::delete_path(string &path)
     {
         for (auto it = task.paths.begin(); it != task.paths.end(); it++)
         {
@@ -73,13 +73,13 @@ namespace l_fw
         return Result<void>::Err(ErrorCode::EVENT_NOT_FOUND, "Error: path not found");
     }
 
-    Result<void> TaskWatcher::add_on_success(string &command)
+    Result<void> TaskRunner::add_on_success(string &command)
     {
         task.on_success.push_back(command);
         return Result<void>::Ok();
     }
 
-    Result<void> TaskWatcher::delete_on_success(string &command)
+    Result<void> TaskRunner::delete_on_success(string &command)
     {
         for (auto it = task.on_success.begin(); it != task.on_success.end(); it++)
         {
@@ -94,13 +94,13 @@ namespace l_fw
         return Result<void>::Err(ErrorCode::COMMAND_NOT_FOUND, "Error: command not found");
     }
 
-    Result<void> TaskWatcher::add_on_failure(string &command)
+    Result<void> TaskRunner::add_on_failure(string &command)
     {
         task.on_failure.push_back(command);
         return Result<void>::Ok();
     }
 
-    Result<void> TaskWatcher::delete_on_failure(string &command)
+    Result<void> TaskRunner::delete_on_failure(string &command)
     {
         for (auto it = task.on_failure.begin(); it != task.on_failure.end(); it++)
         {
@@ -115,7 +115,7 @@ namespace l_fw
         return Result<void>::Err(ErrorCode::COMMAND_NOT_FOUND, "Error: command not found");
     }
 
-    Result<void> TaskWatcher::execute(const _i_event &e)
+    Result<void> TaskRunner::execute(const WatchEvent &e)
     {
         if (task.commands.empty())
         {
@@ -186,7 +186,7 @@ namespace l_fw
     }
 
 
-    Result<void> TaskWatcher::start(void(*callback)(const _i_event &e))
+    Result<void> TaskRunner::start()
     {
         if(is_running)
         {
@@ -218,14 +218,17 @@ namespace l_fw
 
         is_running = true;
         cout << "[FLOWHOOK] Linking callback to event... " << endl;
+
+        callback = {this, &TaskRunner::execute};
         fw.link_event(IN_CLOSE_WRITE, callback);
+
         cout << "[FLOWHOOK] Starting event loop... " << endl;
         fw.start(100);
         cout << "[FLOWHOOK] Task started successfully... " << endl;
         return Result<void>::Ok();
     }
 
-    Result<void> TaskWatcher::stop(void(*callback)(const _i_event &e))
+    Result<void> TaskRunner::stop()
     {
         if(!is_running)
         {

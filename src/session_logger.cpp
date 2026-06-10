@@ -9,7 +9,7 @@
 #include "../include/session_logger.h"
 
 using namespace std;
-namespace l_fw
+namespace flowhook
 {
 
     SessionLogger::SessionLogger()
@@ -51,7 +51,7 @@ namespace l_fw
         return Result<void>::Ok();
     }
 
-    Result<void> SessionLogger::log_event(_i_event e, int success_code, string terminal_msg, vector<string> commands)
+    Result<void> SessionLogger::log_event(WatchEvent e, int success_code, string terminal_msg, vector<string> commands)
     {
         json event;
         event["event_type"] = "modify";

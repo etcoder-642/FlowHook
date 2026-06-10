@@ -19,13 +19,13 @@
 
 #include "../include/filewatcher.h" 
 
-using namespace l_fw;
+using namespace flowhook;
 using namespace std;
 
-Result<_i_event> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
+Result<WatchEvent> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
 {
     cout << "[FLOWHOOK] FileWatcher::handle_events:: handling detected events... " << endl;
-    _i_event e;
+    WatchEvent e;
     const struct inotify_event *event;
     char buffer[4096];
     ssize_t len;
@@ -37,7 +37,7 @@ Result<_i_event> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
         if (len == -1 && errno != EAGAIN)
         {
             std::string _e_msg = "Error: read failure; errno: " + std::string(strerror(errno));
-            return Result<_i_event>::Err(ErrorCode::SYSTEM_IO_ERROR, _e_msg);
+            return Result<WatchEvent>::Err(ErrorCode::SYSTEM_IO_ERROR, _e_msg);
         }
 
         if (len <= 0)
@@ -78,10 +78,10 @@ Result<_i_event> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
             ptr += sizeof(struct inotify_event) + event->len;
             if (i <= argc)
                 i++;
-            return Result<_i_event>::Ok(e);
+            return Result<WatchEvent>::Ok(e);
         }
     }
-    return Result<_i_event>::Err(ErrorCode::UNKNOWN, "Error: empty event");
+    return Result<WatchEvent>::Err(ErrorCode::UNKNOWN, "Error: empty event");
 }
 
 Result<void> FileWatcher::add_path(string &arg)
@@ -171,7 +171,7 @@ Result<void> FileWatcher::event_loop(int timeout)
 
         if (fd[0].revents & POLLIN)
         {
-            _i_event e;
+            WatchEvent e;
             vector<WatchCallback> callback;
             {
                 lock_guard<mutex> lock(registry_mutex);
@@ -202,7 +202,7 @@ Result<void> FileWatcher::event_loop(int timeout)
                 for (auto &cb : callback)
                 {
                     cout << "[FLOWHOOK]:FileWatcher:BackgroundThread Calling Callback... " << endl;
-                    cb(e);
+                    cb.invoke(e);
                 }
             }
         }
