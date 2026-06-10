@@ -7,11 +7,6 @@
 #include "include/task_runner.h"
 #include "include/macros.hpp"
 
-/*
-Unsolved TODOs:
-1. Check if task_name already exists ? DONE
-2. Check if working_directory exists | DONE
-*/
 using namespace std;
 namespace fs = std::filesystem;
 

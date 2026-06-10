@@ -126,7 +126,6 @@ namespace flowhook
             }
         }
 
-        cerr << "Error: command not found" << endl;
         return Result<void>::Err(FWError::make(ErrorCode::COMMAND_NOT_FOUND, "Error: command not found"));
     }
 
@@ -155,7 +154,6 @@ namespace flowhook
             }
         }
 
-        cerr << "Error: command not found" << endl;
         return Result<void>::Err(FWError::make(ErrorCode::COMMAND_NOT_FOUND, "Error: command not found"));
     }
 
@@ -172,7 +170,6 @@ namespace flowhook
             FILE *fp = popen(secure_execution_chain.c_str(), "r");
             if (fp == NULL)
             {
-                cerr << "Error: popen failure" << endl;
                 return Result<void>::Err(FWError::make(ErrorCode::SYS_PIPE_FAILED, "Error: popen failure"));
             }
 
@@ -216,7 +213,6 @@ namespace flowhook
                 {
                     string exec_chain = "cd " + task.working_directory + " && timeout 15s " + cmd_i;
                     system(exec_chain.c_str());
-                    cout << "[FLOWHOOK] Command " << cmd_i << " executed with exit code " << true_exit_code << endl;
                 }
             }
             else 
@@ -225,7 +221,6 @@ namespace flowhook
                 {
                     string exec_chain = "cd " + task.working_directory + " && timeout 15s " + cmd_i;
                     system(exec_chain.c_str());
-                    cout << "[FLOWHOOK] Command " << cmd_i << " executed with exit code " << true_exit_code << endl;
                 }
             }
 
@@ -237,9 +232,23 @@ namespace flowhook
         return Result<void>::Ok();
     }
 
-    Result<void> TaskRunner::add_callback(WatchCallback callback)
+    Result<void> TaskRunner::add_callback(const WatchCallback &callback)
     {
         callbacks.push_back(callback);
+    }
+
+    Result<void> TaskRunner::delete_callback(const WatchCallback &callback)
+    {
+        for (auto it = callbacks.begin(); it != callbacks.end(); it++)
+        {
+            if (*it == callback)
+            {
+                callbacks.erase(it);
+                return Result<void>::Ok();
+            }
+        }
+        
+        return Result<void>::Err(FWError::make(ErrorCode::CALLBACK_NOT_FOUND, "Error: callback not found"));
     }
 
     Result<void> TaskRunner::flush()

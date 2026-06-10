@@ -138,4 +138,21 @@ namespace flowhook
         }
         return Result<vector<Task>>::Ok(tasks);
     }
+
+    Result<void> ConfigManager::flush()
+    {
+        if(isflushed)
+        {
+            return Result<void>::Ok();
+        }
+        config_obj = json::object();
+        file << config_obj.dump(4) << endl;
+        if (file.fail())
+        {
+            return Result<void>::Err(FWError::make(
+                ErrorCode::SYS_IO_FAILED, "Error: writing to config file failed"));
+        }
+        isflushed = true;
+        return Result<void>::Ok();
+    }
 }

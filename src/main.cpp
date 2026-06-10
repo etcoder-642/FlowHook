@@ -2,15 +2,8 @@
 #include <string>
 #include <iostream>
 
-#include <stdio.h>
-#include <fstream>
-
-#include "include/filewatcher.h"
-#include "include/display.h"
-#include "include/task_runner.h"
-#include "include/session_logger.h"
-#include "include/error/error.h"
-#include "include/error/result.h"
+#include "include/flowhook_core.h"
+#include "types.h"
 
 using namespace std;
 using namespace flowhook;
@@ -24,9 +17,9 @@ using namespace flowhook;
       - add stack traceability to error struct | DONE
       - ensure every method handles errors | DONE
       - add TRY macro | DONE
-   3. add config_manager layer
-   4. add some test cases using utest.h
-   5. split CMakeLists.txt
+   3. add config_manager layer | DONE
+   4. add some test cases using utest.h | For tommorrow
+   5. split CMakeLists.txt | for tommorrow
       - separate library target from CLI target
       - wire tests target
    6. start working on the CLI layer
@@ -35,109 +28,33 @@ using namespace flowhook;
 
 int main()
 {
-    TaskRunner* t;
-    t->init("test", "/");
-    print_header();
-    cout << "FOR TESTING PURPOSES ONLY" << endl;
-    string temp_task_name = "fitTrack";
-    string temp_working_directory = "/home/mnasie/coding/C++/fitTrack";
-    string temp_command = "g++ main.cpp -o main";
-    string temp_success_cmd = "ffplay -nodisp -autoexit -loglevel quiet success.mp3";
-    string temp_failure_cmd = "ffplay -nodisp -autoexit -loglevel quiet fahh_meme.mp3";
+    FlowHookCore core;
 
-    t->change_task_name(temp_task_name);
-    t->change_working_directory(temp_working_directory);
-    t->add_path(temp_working_directory);
-    t->add_command(temp_command);
-    t->add_on_success(temp_success_cmd);
-    t->add_on_failure(temp_failure_cmd);
+    // 1. create task
+    std::string name = "build-test";
+    std::string dir = "/home/mnasie/coding/C++/fitTrack";
+    auto r1 = core.create_task(name, dir);
+    if (r1.isErr()) { std::cerr << r1.unwrapErr().message << "\n"; return 1; }
 
-    // string project_name = receive_input("Input the watch instance name: ");
-    // string file_path = receive_input("Input the directory path to watch: ");
-    // t->change_task_name(project_name);
-    // t->change_working_directory(file_path);
-    // t->add_path(file_path);
+    // 2. add commands via update_task
+    Task t;
+    t.name = "build-test";
+    t.working_directory = dir;
+    t.commands = {"g++ main.cpp -o main"};
+    t.on_success = {"echo '[OK] build passed'"};
+    t.on_failure = {"echo '[FAIL] build failed'"};
+    auto r2 = core.update_task(t);
+    if (r2.isErr()) { std::cerr << r2.unwrapErr().message << "\n"; return 1; }
 
-    string usr_input;
+    // 3. flush + start
+    auto r3 = core.start_task(name);
+    if (r3.isErr()) { std::cerr << r3.unwrapErr().message << "\n"; return 1; }
 
-    while (usr_input != "exit")
-    {
-        usr_input = receive_input("Input Value(help -- to see all commands): ");
-        if (usr_input == "add-command")
-        {
-            string path = receive_input("Input Command: ");
-            t->add_command(path);
-        }
-        else if (usr_input == "remove-command")
-        {
-            string path = receive_input("Input Command: ");
-            t->delete_command(path);
-        }
-        else if (usr_input == "add-path")
-        {
-            string path = receive_input("Input file/directory path: ");
-            t->add_path(path);
-        }
-        else if (usr_input == "remove-path")
-        {
-            string path = receive_input("Input file/directory path: ");
-            t->delete_path(path);
-        }
-        else if (usr_input == "add-on-success")
-        {
-            string command = receive_input("Input command: ");
-            t->add_on_success(command);
-        }
-        else if (usr_input == "remove-on-success")
-        {
-            string command = receive_input("Input command: ");
-            t->delete_on_success(command);
-        }
-        else if (usr_input == "add-on-failure")
-        {
-            string command = receive_input("Input command: ");
-            t->add_on_failure(command);
-        }
-        else if (usr_input == "remove-on-failure")
-        {
-            string command = receive_input("Input command: ");
-            t->delete_on_failure(command);
-        }
-        else if (usr_input == "start")
-        {
-            t->start();
-        }
-        else if (usr_input == "stop")
-        {
-            t->stop();
-        }
-        else if (usr_input == "help")
-        {
-            vector<string> commands = {
-                "add-command",
-                "remove-command",
-                "add-path",
-                "remove-path",
-                "add-on-success",
-                "remove-on-success",
-                "add-on-failure",
-                "remove-on-failure",
-                "start",
-                "stop",
-                "help",
-                "exit"};
-            print_list("--- COMMANDS ---\n", commands);
-        }
-        else if (usr_input == "exit")
-            break;
-        else
-        {
-            cerr << "INVALID INPUT" << endl;
-        }
-    }
+    std::cout << "Watching. Touch a file to trigger.\n";
+    std::cin.get(); // block until Enter
 
-    cout << "Exiting..." << endl;
-    cout << "---------------------------------------------" << endl;
-    exit(EXIT_SUCCESS);
+    auto r4 = core.stop_task(name);
+    if (r4.isErr()) { std::cerr << r4.unwrapErr().message << "\n"; return 1; }
+
     return 0;
 }
