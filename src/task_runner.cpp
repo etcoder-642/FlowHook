@@ -26,6 +26,13 @@ namespace flowhook
         task.working_directory = working_directory;
         flushed = false;
         task.isRunning = false;
+        sl = new SessionLogger();
+        if (!sl)
+        {
+            return Result<void>::Err(FWError::make(
+                ErrorCode::SYS_ALLOC_FAILED, "Error: allocating memory for session logger"));
+        }
+        TEST(sl->start(working_directory));
         return Result<void>::Ok();
     }
 
@@ -34,7 +41,8 @@ namespace flowhook
         if(fw)
             fw->stop();
         delete fw;
-        sl.stop();
+        sl->stop();
+        delete sl;
         task.isRunning = false;
     }
 
@@ -287,7 +295,7 @@ namespace flowhook
             }
 
             ExecutionResult result = {execution_id, true_exit_code, e, log_output, task.commands};
-            TEST(sl.log_execution(result));
+            TEST(sl->log_execution(result));
             execution_id++;
         }
 
@@ -338,7 +346,7 @@ namespace flowhook
         }
 
         string _file_path = task.working_directory + "/" + task.name;
-        sl.start(_file_path);
+        sl->start(_file_path);
 
 
         task.isRunning = true;
@@ -368,7 +376,7 @@ namespace flowhook
             count++;
         }
         TEST(fw->stop());
-        TEST(sl.stop());
+        TEST(sl->stop());
         task.isRunning = false;
         return Result<void>::Ok();
     }

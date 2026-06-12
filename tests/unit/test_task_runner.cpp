@@ -51,6 +51,7 @@ UTEST_F_TEARDOWN(TaskRunnerFixture)
     fs::remove_all("/tmp/tr_test");
     fs::remove_all("/tmp/tr_test2");
     fs::remove("/tmp/tr_test_file.txt");
+    delete utest_fixture->tr;
 }
 
 // ---------------------------------------------------------------------------
@@ -67,7 +68,8 @@ UTEST_F(TaskRunnerFixture, create_success)
 
 UTEST_F(TaskRunnerFixture, change_task_name)
 {
-    ASSERT_TRUE(utest_fixture->tr->change_task_name("new_task_name").isOk());
+    auto r = utest_fixture->tr->change_task_name("new_task_name");
+    ASSERT_TRUE(r.isOk());
 }
 UTEST_F(TaskRunnerFixture, change_task_name_twice)
 {
@@ -102,7 +104,12 @@ UTEST_F(TaskRunnerFixture, change_working_directory_empty)
 
 UTEST_F(TaskRunnerFixture, add_command)
 {
-    EXPECT_TRUE(utest_fixture->tr->add_command("ls").isOk());
+    auto r = utest_fixture->tr->add_command("ls");
+    EXPECT_TRUE(r.isOk());
+    if(r.isErr())
+    {
+        cerr << r.unwrapErr().message << endl;
+    }
 }
 UTEST_F(TaskRunnerFixture, add_command_twice)
 {
