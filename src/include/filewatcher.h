@@ -61,8 +61,8 @@ namespace flowhook
         FileWatcher &operator=(const FileWatcher &) = delete;
         bool is_running() const { return isWatching; }
 
-        Result<void> add_path(std::string &arg);
-        Result<void> remove_path(std::string &arg);
+        Result<void> add_path(const std::string &arg);
+        Result<void> remove_path(const std::string &arg);
         Result<void> start(int timeout);
         Result<void> stop();
 

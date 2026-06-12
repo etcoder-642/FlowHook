@@ -5,7 +5,7 @@
 
 #include "error/result.h"
 
-namespace flowhook 
+namespace flowhook
 {
     class TaskRunner;
     struct WatchEvent
@@ -21,7 +21,15 @@ namespace flowhook
         TaskRunner *ptr;
         Result<void> (TaskRunner::*handler)(const WatchEvent &e) = nullptr;
         Result<void> (*raw_callback)(const WatchEvent &e) = nullptr;
-
+        
+        static WatchCallback from_raw(Result<void> (*fn)(const WatchEvent &e))
+        {
+            WatchCallback cb;
+            cb.ptr = nullptr;
+            cb.handler = nullptr;
+            cb.raw_callback = fn;
+            return cb;
+        }
         bool operator==(const WatchCallback &o) const
         {
             return ptr == o.ptr && handler == o.handler && raw_callback == o.raw_callback;
