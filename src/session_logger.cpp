@@ -25,7 +25,6 @@ namespace flowhook
         auto _temp = stop();
         if(_temp.isErr())
         {
-            cerr << "Error: SessionLogger::stop() failed" << endl;
             cerr << _temp.unwrapErr().message << endl;
         }
     }
@@ -37,7 +36,6 @@ namespace flowhook
             return Result<void>::Err(FWError::make(
                 ErrorCode::SESSION_LOGGER_ALREADY_RUNNING, "Error: session logger already running"));
         }
-        cout << "[FLOWHOOK] Starting session logger... " << file_path << endl;
         string _file_name = file_path + ".log";
         file.open(_file_name, ios::out | ios::app);
         if (!file.is_open())

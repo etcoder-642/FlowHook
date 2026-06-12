@@ -4,12 +4,13 @@
 #include <vector>
 #include <string>
 
+#include "types.h"
 #include "filewatcher.h"
 #include "session_logger.h"
-#include "types.h"
 
 namespace flowhook
 {
+    class FileWatcher;
     class TaskRunner
     {
     private:
@@ -18,13 +19,13 @@ namespace flowhook
         Task task;
         std::vector<WatchCallback> callbacks;
 
-        bool is_running;
         bool flushed;
         bool is_init = false;
         int execution_id = 0;
 
         TaskRunner() = default;
     public:
+        static Result<TaskRunner*> create(const std::string &task_name, const std::string &working_directory);
         Result<void> init(const std::string &task_name, const std::string &working_directory);
         ~TaskRunner();
 
@@ -35,6 +36,7 @@ namespace flowhook
         bool is_active() const { return task.isActive; }
         void activate() { task.isActive = true; }
         void deactivate() { task.isActive = false; }
+        bool is_running() const { return task.isRunning; }
 
         Result<void> change_task_name(std::string &task_name);
         Result<void> change_working_directory(std::string &working_directory);

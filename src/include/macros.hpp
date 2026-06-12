@@ -18,3 +18,13 @@
         return Result<void>::Err(_e);                  \
     }                                                  \
 })
+
+#define TEST_OVERLOADED(expr, ReturnType)  ({          \
+    auto _r = (expr);                                  \
+    if (_r.isErr())                                    \
+    {                                                  \
+        auto _e = _r.unwrapErr();                      \
+        _e.pushFrame(std::source_location::current()); \
+        return Result<ReturnType>::Err(_e);            \
+    }                                                  \
+})

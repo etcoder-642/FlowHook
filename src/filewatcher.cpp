@@ -23,6 +23,13 @@
 using namespace flowhook;
 using namespace std;
 
+Result<FileWatcher*> FileWatcher::create()
+{
+    FileWatcher* fw = new FileWatcher();
+    TEST_OVERLOADED(fw->init(), FileWatcher*);
+    return Result<FileWatcher*>::Ok(fw);
+}
+
 Result<void> FileWatcher::init()
 {
     inotify_fd = inotify_init1(IN_NONBLOCK);
@@ -35,6 +42,7 @@ Result<void> FileWatcher::init()
     nfds = 1;
     fd[0].fd = inotify_fd;
     fd[0].events = POLLIN;
+    return Result<void>::Ok();
 }
 
 Result<WatchEvent> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
@@ -73,6 +81,10 @@ Result<WatchEvent> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
             else if (event->mask & IN_MODIFY)
             {
                 e.event_mask = IN_MODIFY;
+            }
+            else if(event->mask & IN_MOVED_TO)
+            {
+                e.event_mask = IN_MOVED_TO;
             }
 
             string base_path = watch_registry[event->wd];

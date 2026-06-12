@@ -12,17 +12,32 @@
 namespace flowhook {
     class FlowHookCore {
         private:
-            ConfigManager config_manager;
-            std::vector<TaskRunner> task_runners;
+            ConfigManager* config_manager;
+            std::vector<TaskRunner*> task_runners;
+            FlowHookCore() = default;
         public:
-            FlowHookCore();
+            static Result<FlowHookCore*> create();
             ~FlowHookCore();
+
+            Result<void> init();
 
             Result<void> create_task(std::string &task_name, std::string &working_directory);
             Result<void> delete_task(std::string &task_name);
 
             Result<void> start_task(std::string &task_name);
             Result<void> stop_task(std::string &task_name);
+
+
+            Result<void> set_task_path(std::string &task_name, std::string &path);
+            Result<void> delete_task_path(std::string &task_name, std::string &path);
+
+            Result<void> set_task_command(std::string &task_name, std::string &command);
+            Result<void> delete_task_command(std::string &task_name, std::string &command);
+
+            Result<void> set_task_on_success(std::string &task_name, std::string &command);
+            Result<void> delete_task_on_success(std::string &task_name, std::string &command);
+            Result<void> set_task_on_failure(std::string &task_name, std::string &command);
+            Result<void> delete_task_on_failure(std::string &task_name, std::string &command);
 
             Result<void> start_all();
             Result<void> stop_all();
@@ -32,13 +47,6 @@ namespace flowhook {
 
             Result<void> start_active();
             Result<void> stop_active();
-
-            Result<void> create_config_file();
-            Result<void> delete_config_file();
-
-            Result<void> log_task(const Task &task);
-            Result<void> update_task(const Task &task);
-            Result<void> log_task_inbatch(const std::vector<Task> &tasks);
             Result<void> delete_task(const Task &task);
 
             std::vector<Task> get_tasks() const;

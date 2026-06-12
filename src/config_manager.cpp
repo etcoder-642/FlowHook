@@ -7,10 +7,27 @@
 #include "include/config_manager.h"
 #include "include/macros.hpp"
 
+namespace fs = std::filesystem;
 using namespace std;
 
 namespace flowhook
 {
+    Result<ConfigManager*> ConfigManager::create()
+    {
+        ConfigManager* cm = new ConfigManager();
+        TEST_OVERLOADED(cm->init(), ConfigManager*);
+        return Result<ConfigManager*>::Ok(cm);
+    }
+
+    ConfigManager::~ConfigManager() {
+        if(!isflushed)
+            flush();
+        if(file.is_open())
+        {
+            file.close();
+        }
+
+    };
     std::filesystem::path get_config_path()
     {
         const char *home = std::getenv("HOME");
@@ -41,7 +58,70 @@ namespace flowhook
         return Result<void>::Ok();
     }
 
-    Result<json> convert_task_to_json(const Task &task)
+    Result<vector<Task>> ConfigManager::load()
+    {
+        vector<Task> tasks;
+        if(file.peek() == ifstream::traits_type::eof()){
+            return Result<vector<Task>>::Err(FWError::make(
+                ErrorCode::CONFIG_FILE_EMPTY, "Error: config file is empty"
+            ));
+        }else {
+            file >> config_obj;
+        }
+
+        if (file.fail())
+        {
+            return Result<vector<Task>>::Err(FWError::make(
+                ErrorCode::SYS_IO_FAILED, "Error: reading config file failed"));
+        }
+        for(auto it = config_obj["tasks"].begin(); it != config_obj["tasks"].end(); it++)
+        {
+            Task _task;
+            _task = TRY(convert_json_to_task(*it), vector<Task>);
+            tasks.push_back(_task);
+        }
+        return Result<vector<Task>>::Ok(tasks);
+    }
+
+    Result<Task> ConfigManager::convert_json_to_task(const json &json_task)
+    {
+        Task _task;
+        _task.name = json_task.at("task_name");
+        _task.working_directory = json_task.at("working_directory");
+        
+        vector<string> _commands;
+        for(auto &cmd: json_task.at("commands"))
+        {
+            _commands.push_back(cmd);
+        }
+        _task.commands = _commands;
+
+
+        vector<string> _paths;
+        for(auto &cmd: json_task.at("paths"))
+        {
+            _paths.push_back(cmd);
+        }
+        _task.paths = _paths;
+
+        vector<string> _on_success;
+        for(auto &cmd: json_task.at("on_success"))
+        {
+            _on_success.push_back(cmd);
+        }
+        _task.on_success = _on_success;
+
+        vector<string> _on_failure;
+        for(auto &cmd: json_task.at("on_failure"))
+        {
+            _on_failure.push_back(cmd);
+        }
+        _task.on_failure = _on_failure;
+        _task.isActive = json_task.at("isActive");
+        return Result<Task>::Ok(_task);
+    }
+
+    Result<json> ConfigManager::convert_task_to_json(const Task &task)
     {
         json _json_task = json::object();
         _json_task["task_name"] = task.name;
@@ -67,6 +147,7 @@ namespace flowhook
             _json_task["on_failure"].push_back(cmd);
         }
         _json_task["isActive"] = task.isActive;
+        return Result<json>::Ok(_json_task);
     }
 
     Result<void> ConfigManager::log_task(const Task &task)
@@ -79,6 +160,7 @@ namespace flowhook
 
     Result<void> ConfigManager::update_task(const Task &task)
     {
+        flush();
         for(auto it = config_obj["tasks"].begin(); it != config_obj["tasks"].end(); it++)
         {
             string name = it->at("task_name");

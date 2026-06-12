@@ -18,7 +18,6 @@
 
 #include "error/result.h"
 #include "error/error.h"
-#include "task_runner.h"
 #include "types.h"
 
 namespace flowhook
@@ -47,6 +46,7 @@ namespace flowhook
 
     public:
         // Factory Function constuctor
+        static Result<FileWatcher*> create();
         Result<void> init();
 
         // destructor

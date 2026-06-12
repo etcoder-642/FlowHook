@@ -10,20 +10,31 @@ using namespace std;
 
 namespace flowhook
 {
+    Result<TaskRunner*> TaskRunner::create(const string &task_name, const string &working_directory)
+    {
+        TaskRunner* t = new TaskRunner();
+        TEST_OVERLOADED(t->init(task_name, working_directory), TaskRunner*);
+        return Result<TaskRunner*>::Ok(t);
+    }
+
     Result<void> TaskRunner::init(const string &task_name, const string &working_directory)
     {
-        fw->init();
+        fw = TRY(FileWatcher::create(), void);
+        TEST(fw->init());
         task.name = task_name;
         task.working_directory = working_directory;
         flushed = false;
-        is_running = false;
+        task.isRunning = false;
+        return Result<void>::Ok();
     }
 
     TaskRunner::~TaskRunner()
     {
-        fw->stop();
+        if(fw)
+            fw->stop();
+        delete fw;
         sl.stop();
-        is_running = false;
+        task.isRunning = false;
     }
 
     Result<void> TaskRunner::change_task_name(string &task_name)
@@ -235,6 +246,7 @@ namespace flowhook
     Result<void> TaskRunner::add_callback(const WatchCallback &callback)
     {
         callbacks.push_back(callback);
+        return Result<void>::Ok();
     }
 
     Result<void> TaskRunner::delete_callback(const WatchCallback &callback)
@@ -259,7 +271,6 @@ namespace flowhook
         }
         if(task.commands.empty())
         {
-            cout << "[FLOWHOOK]:ERROR No commands to execute" << endl;
             return Result<void>::Err(FWError::make(ErrorCode::COMMAND_NOT_FOUND, "Error: no commands to execute"));
         }
 
@@ -275,7 +286,7 @@ namespace flowhook
 
         for(auto &cb : callbacks)
         {
-            TEST(fw->link_event(IN_CLOSE_WRITE, cb));
+            TEST(fw->link_event(IN_MOVED_TO, cb));
         }
         flushed = true;
         return Result<void>::Ok();
@@ -283,7 +294,7 @@ namespace flowhook
 
     Result<void> TaskRunner::start()
     {
-        if(is_running)
+        if(task.isRunning)
         {
             return Result<void>::Err(FWError::make(ErrorCode::TASK_ALREADY_RUNNING, "Error: task runner already running"));
         }
@@ -292,7 +303,7 @@ namespace flowhook
         sl.start(_file_path);
 
 
-        is_running = true;
+        task.isRunning = true;
         TEST(flush());
 
         WatchCallback callback = {this, &TaskRunner::execute};
@@ -304,18 +315,18 @@ namespace flowhook
 
     Result<void> TaskRunner::stop()
     {
-        if(!is_running)
+        if(!task.isRunning)
         {
             return Result<void>::Err(ErrorCode::TASK_NOT_RUNNING, "Error: task watcher not running");
         }
 
         for(auto &cb : callbacks)
         {
-            TEST(fw->unlink_event(IN_CLOSE_WRITE, cb));
+            TEST(fw->unlink_event(IN_MOVED_TO, cb));
         }
         TEST(fw->stop());
         TEST(sl.stop());
-        is_running = false;
+        task.isRunning = false;
         return Result<void>::Ok();
     }
 }

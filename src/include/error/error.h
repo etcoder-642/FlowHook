@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <source_location>
+#include <cstdint>
 
 namespace flowhook
 {
@@ -19,14 +20,16 @@ namespace flowhook
         TASK_ALREADY_EXISTS,
 
         // Config lookup errors
+        PATH_NOT_FOUND,
+        PATH_ALREADY_EXISTS,
+        CONFIG_FILE_EMPTY,
+
         EVENT_NOT_FOUND,
         COMMAND_NOT_FOUND,
-        PATH_NOT_FOUND,
         DUPLICATE_ENTRY,
-        CALLBACK_NOT_FOUND,
-        PATH_ALREADY_EXISTS,
         COMMAND_ALREADY_EXISTS,
         COMMAND_EMPTY,
+        CALLBACK_NOT_FOUND,
 
         // filewatcher errors
         FILEWATCHER_ALREADY_RUNNING,
@@ -69,7 +72,8 @@ namespace flowhook
             stackTrace.push_back(StackFrame{
                 loc.function_name(),
                 loc.file_name(),
-                loc.line()});
+                loc.line()
+            });
         }
 
         void printStackTrace() const

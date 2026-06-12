@@ -6,7 +6,6 @@
 #include <fstream>
 
 #include "filewatcher.h"
-#include "task_runner.h"
 #include "json.hpp"
 #include "error/result.h"
 #include "types.h"

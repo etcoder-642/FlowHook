@@ -4,6 +4,7 @@
 
 #include "include/flowhook_core.h"
 #include "include/error/result.h"
+#include "include/error/error.h"
 #include "include/task_runner.h"
 #include "include/macros.hpp"
 
@@ -12,12 +13,41 @@ namespace fs = std::filesystem;
 
 namespace flowhook {
 
+    Result<FlowHookCore*> FlowHookCore::create(){
+        FlowHookCore* core = new FlowHookCore();
+        TEST_OVERLOADED(core->init(), FlowHookCore*);
+        return Result<FlowHookCore*>::Ok(core);
+    }
+
+    FlowHookCore::~FlowHookCore()
+    {
+        config_manager->flush();
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            delete (*it);
+        }
+    }
+
+    Result<void> FlowHookCore::init()
+    {
+        config_manager = TRY(ConfigManager::create(), void);
+        TEST(config_manager->init());
+        auto _execute_load = config_manager->load();
+        if(_execute_load.isErr())
+        {
+            if(_execute_load.unwrapErr().code != ErrorCode::CONFIG_FILE_EMPTY)
+            {
+                return Result<void>::Err(_execute_load.unwrapErr());
+            }
+        }
+        return Result<void>::Ok();
+    }
 
     Result<void> FlowHookCore::create_task(std::string &task_name, std::string &working_directory)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
-            string name = it->get_task_name();
+            string name = (*it)->get_task_name();
             if(name == task_name)
             {
                 return Result<void>::Err(FWError::make(ErrorCode::DUPLICATE_ENTRY, "Error: task already exists"));
@@ -33,9 +63,9 @@ namespace flowhook {
         {
             return Result<void>::Err(FWError::make(ErrorCode::TASK_FULL, "Error: task limit reached"));
         }
-        TaskRunner* t;
-        t->init(task_name, working_directory);
-        task_runners.push_back(*t);
+        auto result = TRY(TaskRunner::create(task_name, working_directory), void);
+        task_runners.push_back(result);
+        TEST(config_manager->log_task(result->get_task()));
         return Result<void>::Ok();
     }
 
@@ -43,13 +73,16 @@ namespace flowhook {
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
-            string name = it->get_task_name();
+            string name = (*it)->get_task_name();
             if(name == task_name)
             {
+                Task _task_to_be_deleted = (*it)->get_task();
+                TEST(config_manager->delete_task(_task_to_be_deleted));
                 task_runners.erase(it);
                 return Result<void>::Ok();
             }
         }
+
 
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
@@ -58,10 +91,10 @@ namespace flowhook {
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
-            string name = it->get_task_name();
+            string name = (*it)->get_task_name();
             if(name == task_name)
             {
-                it->activate();
+                (*it)->activate();
                 return Result<void>::Ok();
             }
         }
@@ -73,10 +106,10 @@ namespace flowhook {
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
-            string name = it->get_task_name();
+            string name = (*it)->get_task_name();
             if(name == task_name)
             {
-                it->deactivate();
+                (*it)->deactivate();
                 return Result<void>::Ok();
             }
         }
@@ -84,14 +117,120 @@ namespace flowhook {
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
 
+    Result<void> FlowHookCore::set_task_path(std::string &task_name, std::string &path)
+    {
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            string name = (*it)->get_task_name();
+            if(name == task_name)
+            {
+                TEST((*it)->add_path(path));
+                return Result<void>::Ok();
+            }
+        }
+
+        return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
+    }
+
+    Result<void> FlowHookCore::delete_task_path(std::string &task_name, std::string &path)
+    {
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            string name = (*it)->get_task_name();
+            if(name == task_name)
+            {
+                TEST((*it)->delete_path(path));
+                return Result<void>::Ok();
+            }
+        }
+
+        return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
+    }
+
+    Result<void> FlowHookCore::set_task_command(std::string &task_name, std::string &command)
+    {
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            string name = (*it)->get_task_name();
+            if(name == task_name)
+            {
+                TEST((*it)->add_command(command));
+                return Result<void>::Ok();
+            }
+        }
+        return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
+    }
+    
+    Result<void> FlowHookCore::delete_task_command(std::string &task_name, std::string &command)
+    {
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            string name = (*it)->get_task_name();
+            if(name == task_name)
+            {
+                TEST((*it)->delete_command(command));
+                return Result<void>::Ok();
+            }
+        }
+        return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
+    }
+
+    Result<void> FlowHookCore::set_task_on_success(std::string &task_name, std::string &command)
+    {
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            string name = (*it)->get_task_name();
+            if(name == task_name)
+            {
+                TEST((*it)->add_on_success(command));
+                return Result<void>::Ok();
+            }
+        }
+        return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
+    }
+    
+    Result<void> FlowHookCore::delete_task_on_success(std::string &task_name, std::string &command)
+    {
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            string name = (*it)->get_task_name();
+            if(name == task_name)
+            {
+                TEST((*it)->delete_on_success(command));
+                return Result<void>::Ok();
+            }
+        }
+
+        return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
+    }
+
+    Result<void> FlowHookCore::set_task_on_failure(std::string &task_name, std::string &command)
+    {
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            string name = (*it)->get_task_name();
+            if(name == task_name)
+            {
+                TEST((*it)->add_on_failure(command));
+                return Result<void>::Ok();
+            }
+        }
+        return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
+    }
+
+
     Result<void> FlowHookCore::start_task(std::string &task_name)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
-            string name = it->get_task_name();
+            string name = (*it)->get_task_name();
             if(name == task_name)
             {
-                it->start();
+                if((*it)->is_running())
+                {
+                    return Result<void>::Err(FWError::make(ErrorCode::TASK_ALREADY_RUNNING, "Error: task already running"));
+                }
+                (*it)->start();
                 return Result<void>::Ok();
             }
         }
@@ -102,10 +241,10 @@ namespace flowhook {
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
-            string name = it->get_task_name();
+            string name = (*it)->get_task_name();
             if(name == task_name)
             {
-                it->stop();
+                (*it)->stop();
                 return Result<void>::Ok();
             }
         }
@@ -121,11 +260,10 @@ namespace flowhook {
 
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
-            auto execute = it->start();
-            if(execute.isErr())
-            {
-                return Result<void>::Err(execute.unwrapErr());
+            if((*it)->is_running()){
+                return Result<void>::Err(FWError::make(ErrorCode::TASK_ALREADY_RUNNING, "Error: task already running"));
             }
+            TEST((*it)->start());
         }
         return Result<void>::Ok();
     }
@@ -139,7 +277,7 @@ namespace flowhook {
 
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
-            TEST(it->stop());
+            TEST((*it)->stop());
         }
         return Result<void>::Ok();
     }
@@ -153,41 +291,17 @@ namespace flowhook {
 
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
-            if(it->is_active())
+            if((*it)->is_active())
             {
-                TEST(it->start());
+                TEST((*it)->start());
             }
         }
-    }
-
-    Result<void> FlowHookCore::create_config_file()
-    {
-        return config_manager.init();
-    }
-
-    Result<void> FlowHookCore::delete_config_file()
-    {
-        return config_manager.purge_config();
-    }
-
-    Result<void> FlowHookCore::log_task(const Task &task)
-    {
-        return config_manager.log_task(task);
-    }
-
-    Result<void> FlowHookCore::update_task(const Task &task)
-    {
-        return config_manager.update_task(task);
-    }
-
-    Result<void> FlowHookCore::log_task_inbatch(const std::vector<Task> &tasks)
-    {
-        return config_manager.log_task_inbatch(tasks);
+        return Result<void>::Ok();
     }
 
     Result<void> FlowHookCore::delete_task(const Task &task)
     {
-        return config_manager.delete_task(task);
+        return config_manager->delete_task(task);
     }
 
     std::vector<Task> FlowHookCore::get_tasks() const
@@ -195,7 +309,7 @@ namespace flowhook {
         vector<Task> tasks;
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
-            tasks.push_back(it->get_task());
+            tasks.push_back((*it)->get_task());
         }
         return tasks;
     }

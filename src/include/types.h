@@ -1,12 +1,14 @@
+#pragma once
 #include <string>
 #include <vector>
+#include <cstdint>
 
 #include "error/result.h"
-#include "task_runner.h"
 
 namespace flowhook 
 {
-        struct WatchEvent
+    class TaskRunner;
+    struct WatchEvent
     {
         int wd;
         std::string filetype;
@@ -48,6 +50,7 @@ namespace flowhook
         std::vector<std::string> on_success;
         std::vector<std::string> on_failure;
         bool isActive;
+        bool isRunning = false;
     };
 
     struct ExecutionResult
