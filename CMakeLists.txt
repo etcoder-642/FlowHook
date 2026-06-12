@@ -31,6 +31,11 @@ add_executable(test_task_runner tests/unit/test_task_runner.cpp)
 target_link_libraries(test_task_runner PRIVATE flowhook_lib)
 target_include_directories(test_task_runner PRIVATE tests)
 
+add_executable(test_session_logger tests/unit/test_session_logger.cpp)
+target_link_libraries(test_session_logger PRIVATE flowhook_lib)
+target_include_directories(test_session_logger PRIVATE tests)
+
 enable_testing()
 add_test(NAME flowhook_filewatcher_tests COMMAND test_filewatcher)
 add_test(NAME flowhook_task_runner_tests COMMAND test_task_runner)
+add_test(NAME flowhook_session_logger_tests COMMAND test_session_logger)

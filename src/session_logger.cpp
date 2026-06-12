@@ -3,13 +3,15 @@
 #include <string>
 #include <iostream>
 #include <chrono>
-#include <iomanip>
 #include <sstream>
 #include <ctime>
+#include <filesystem>
 
 #include "include/session_logger.h"
 #include "include/macros.hpp"
 
+namespace fs = std::filesystem;
+// Error
 using namespace std;
 namespace flowhook
 {
@@ -23,18 +25,27 @@ namespace flowhook
     SessionLogger::~SessionLogger()
     {
         auto _temp = stop();
-        if(_temp.isErr())
-        {
-            cerr << _temp.unwrapErr().message << endl;
-        }
     }
 
     Result<void> SessionLogger::start(const string &file_path)
     {
+        // check if session logger is already running
         if (is_running)
         {
             return Result<void>::Err(FWError::make(
                 ErrorCode::SESSION_LOGGER_ALREADY_RUNNING, "Error: session logger already running"));
+        }
+        // check if file path is empty
+        if (file_path.empty())
+        {
+            return Result<void>::Err(FWError::make(
+                ErrorCode::EMPTY_VALUE, "Error: file path is empty"));
+        }
+        // check if file path is a valid path
+        if (!fs::exists(file_path))
+        {
+            return Result<void>::Err(FWError::make(
+                ErrorCode::PATH_NOT_FOUND, "Error: file path not found"));
         }
         string _file_name = file_path + ".log";
         file.open(_file_name, ios::out | ios::app);
@@ -60,11 +71,11 @@ namespace flowhook
 
     Result<void> SessionLogger::log_execution(const ExecutionResult &execution_result)
     {
-        // if (session.empty())
-        // {
-        //     return Result<void>::Err(FWError::make(
-        //         ErrorCode::SESSION_LOGGER_NOT_RUNNING, "Error: session logger not initialized"));
-        // }
+        if (session.empty())
+        {
+            return Result<void>::Err(FWError::make(
+                ErrorCode::SESSION_LOGGER_NOT_RUNNING, "Error: session logger not initialized"));
+        }
         WatchEvent e = execution_result._event;
         string terminal_msg = execution_result.log;
         vector<string> commands = execution_result.build_commands;

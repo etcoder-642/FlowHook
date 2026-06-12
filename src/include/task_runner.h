@@ -15,7 +15,7 @@ namespace flowhook
     {
     private:
         FileWatcher *fw = nullptr;
-        SessionLogger sl;
+        SessionLogger *sl;
         Task task;
         std::vector<WatchCallback> callbacks;
 

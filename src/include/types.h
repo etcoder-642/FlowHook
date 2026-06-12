@@ -19,6 +19,10 @@ namespace flowhook
         {
             return wd == -1 && filetype.empty() && path.empty() && event_mask == -1;
         }
+        WatchEvent(int wd, std::string filetype, std::string path, uint32_t event_mask)
+            : wd(wd), filetype(filetype), path(path), event_mask(event_mask) {}
+
+        WatchEvent(): wd(-1), filetype(""), path(""), event_mask(-1) {}
     };
 
     struct WatchCallback
@@ -78,6 +82,13 @@ namespace flowhook
         WatchEvent _event;
         std::string log;
         std::vector<std::string> build_commands;
+
+        ExecutionResult(int id, int exit_code, WatchEvent event = WatchEvent(), std::string log = "", std::vector<std::string> build_commands = std::vector<std::string>())
+            : id(id), exit_code(exit_code), log(log), build_commands(build_commands)
+        {
+            _event = event;
+        }
+        ExecutionResult(): id(-1), exit_code(-1), log(""), build_commands(std::vector<std::string>()) {}
     };
 
 }

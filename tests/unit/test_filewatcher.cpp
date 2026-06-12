@@ -57,6 +57,7 @@ UTEST_F_TEARDOWN(FileWatcherFixture)
     fs::remove_all("/tmp/fh_test2");
     fs::remove_all("/tmp/fh_test3");
     fs::remove("/tmp/fh_test_file.txt");
+    delete utest_fixture->fw;
 }
 
 // ---------------------------------------------------------------------------
