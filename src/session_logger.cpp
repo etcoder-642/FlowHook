@@ -60,11 +60,11 @@ namespace flowhook
 
     Result<void> SessionLogger::log_execution(const ExecutionResult &execution_result)
     {
-        if (session.empty())
-        {
-            return Result<void>::Err(FWError::make(
-                ErrorCode::SESSION_LOGGER_NOT_RUNNING, "Error: session logger not initialized"));
-        }
+        // if (session.empty())
+        // {
+        //     return Result<void>::Err(FWError::make(
+        //         ErrorCode::SESSION_LOGGER_NOT_RUNNING, "Error: session logger not initialized"));
+        // }
         WatchEvent e = execution_result._event;
         string terminal_msg = execution_result.log;
         vector<string> commands = execution_result.build_commands;

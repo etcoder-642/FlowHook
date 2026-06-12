@@ -122,6 +122,12 @@ Result<void> FileWatcher::add_path(const string &arg)
             ));
         }
     }
+    // check if path is empty
+    if(arg.empty())
+    {
+        return Result<void>::Err(FWError::make(
+            ErrorCode::EMPTY_VALUE, "Error: path is empty"));
+    }
 
     // add path to inotify
     int wd = inotify_add_watch(inotify_fd, arg.c_str(),

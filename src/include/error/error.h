@@ -30,7 +30,9 @@ namespace flowhook
         DUPLICATE_ENTRY,
         COMMAND_ALREADY_EXISTS,
         COMMAND_EMPTY,
+
         CALLBACK_NOT_FOUND,
+        CALLBACK_ALREADY_EXISTS,
 
         // filewatcher errors
         FILEWATCHER_ALREADY_RUNNING,
@@ -48,6 +50,8 @@ namespace flowhook
         SYS_IO_FAILED,
         SYS_THREAD_FAILED,
         SYS_ALLOC_FAILED,
+
+        EMPTY_VALUE,
 
         UNKNOWN
     };

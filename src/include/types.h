@@ -10,10 +10,15 @@ namespace flowhook
     class TaskRunner;
     struct WatchEvent
     {
-        int wd;
-        std::string filetype;
-        std::string path;
-        uint32_t event_mask;
+        int wd = -1;
+        std::string filetype = "";
+        std::string path = "";
+        uint32_t event_mask = -1;
+
+        bool isNull() const
+        {
+            return wd == -1 && filetype.empty() && path.empty() && event_mask == -1;
+        }
     };
 
     struct WatchCallback
@@ -45,6 +50,11 @@ namespace flowhook
             {
                 return (ptr->*handler)(e);
             }
+        }
+
+        bool isNull() const
+        {
+            return ptr == nullptr && handler == nullptr && raw_callback == nullptr;
         }
     };
 

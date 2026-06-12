@@ -43,11 +43,11 @@ namespace flowhook
         Result<void> event_loop(int timeout);
 
         FileWatcher() = default;
+        Result<void> init();
 
     public:
         // Factory Function constuctor
         static Result<FileWatcher*> create();
-        Result<void> init();
 
         // destructor
         ~FileWatcher()
