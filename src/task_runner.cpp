@@ -286,7 +286,7 @@ namespace flowhook
 
         for(auto &cb : callbacks)
         {
-            TEST(fw->link_event(IN_MOVED_TO, cb));
+            TEST(fw->link_event(IN_CLOSE_WRITE, cb));
         }
         flushed = true;
         return Result<void>::Ok();
@@ -304,11 +304,11 @@ namespace flowhook
 
 
         task.isRunning = true;
-        TEST(flush());
 
         WatchCallback callback = {this, &TaskRunner::execute};
         TEST(add_callback(callback));
 
+        TEST(flush());
         TEST(fw->start(100));
         return Result<void>::Ok();
     }
@@ -322,7 +322,7 @@ namespace flowhook
 
         for(auto &cb : callbacks)
         {
-            TEST(fw->unlink_event(IN_MOVED_TO, cb));
+            TEST(fw->unlink_event(IN_CLOSE_WRITE, cb));
         }
         TEST(fw->stop());
         TEST(sl.stop());

@@ -72,18 +72,21 @@ Result<WatchEvent> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
         {
             event = reinterpret_cast<const struct inotify_event *>(ptr);
 
-            cout << "[FLOWHOOK]::handle_events:: event mask: " << event->mask << endl;
+            // cout << "[FLOWHOOK]::handle_events:: event mask: " << event->mask << endl;
 
             if (event->mask & IN_CLOSE_WRITE)
             {
+                cout << "[FLOWHOOK] IN_CLOSE_WRITE detected" << endl;
                 e.event_mask = IN_CLOSE_WRITE;
             }
             else if (event->mask & IN_MODIFY)
             {
+                cout << "[FLOWHOOK] IN_MODIFY detected" << endl;
                 e.event_mask = IN_MODIFY;
             }
             else if(event->mask & IN_MOVED_TO)
             {
+                cout << "[FLOWHOOK] IN_MOVED_TO detected" << endl;
                 e.event_mask = IN_MOVED_TO;
             }
 
@@ -180,7 +183,6 @@ Result<void> FileWatcher::event_loop(int timeout)
     cout << "[FLOWHOOK] FileWatcher:BackgroundThread event poll starting... " << endl;
     while (isWatching)
     {
-        // cout << "[FLOWHOOK]:FileWatcher:BackgroundThread Polling... " << endl;
         poll_num = poll(fd, nfds, timeout);
 
         if (poll_num == -1)
@@ -210,20 +212,13 @@ Result<void> FileWatcher::event_loop(int timeout)
                 {
                     _wd_keys.push_back(wd);
                 }
-                cout << "[FLOWHOOK] Handle Events... " << endl;
                 auto e = TRY(handle_events(fd[0].fd, _wd_keys, watch_registry.size()), void);
                 callback = event_callbacks[e.event_mask];
             }
-            // debounce check
-            cout << "[FLOWHOOK]:FileWatcher:BackgroundThread Debouncing... " << endl;
-
-            cout << "[FLOWHOOK] callback size: " << callback.size() << endl;
             if (!callback.empty())
             {
-                cout << "[FLOWHOOK]::event_loop:: e.event_mask = " << e.event_mask << endl;
                 for (auto &cb : callback)
                 {
-                    cout << "[FLOWHOOK]:FileWatcher:BackgroundThread Calling Callback... " << endl;
                     TEST(cb.invoke(e));
                 }
             }

@@ -54,7 +54,7 @@ namespace flowhook {
             }
         }
 
-        if(fs::is_directory(working_directory) == false)
+        if(!fs::exists(working_directory) || !fs::is_directory(working_directory))
         {
             return Result<void>::Err(FWError::make(ErrorCode::PATH_NOT_FOUND, "Error: working directory not found"));
         }
@@ -119,6 +119,10 @@ namespace flowhook {
 
     Result<void> FlowHookCore::set_task_path(std::string &task_name, std::string &path)
     {
+        if(!fs::exists(path))
+        {
+            return Result<void>::Err(FWError::make(ErrorCode::PATH_NOT_FOUND, "Error: path not found"));
+        }
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
             string name = (*it)->get_task_name();

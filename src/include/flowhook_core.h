@@ -15,6 +15,8 @@ namespace flowhook {
             ConfigManager* config_manager;
             std::vector<TaskRunner*> task_runners;
             FlowHookCore() = default;
+
+            bool isValidDir(std::string &path);
         public:
             static Result<FlowHookCore*> create();
             ~FlowHookCore();
