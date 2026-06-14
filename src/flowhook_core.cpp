@@ -34,8 +34,12 @@ namespace flowhook {
         return Result<void>::Ok();
     }
 
-    Result<void> FlowHookCore::create_task(std::string &task_name, std::string &working_directory)
+    Result<void> FlowHookCore::create_task(const std::string &task_name, const std::string &working_directory)
     {
+        if(task_name.empty())
+        {
+            return Result<void>::Err(FWError::make(ErrorCode::EMPTY_VALUE, "Error: task name cannot be empty"));
+        }
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
             string name = (*it)->get_task_name();
@@ -60,7 +64,7 @@ namespace flowhook {
         return Result<void>::Ok();
     }
 
-    Result<void> FlowHookCore::delete_task(std::string &task_name)
+    Result<void> FlowHookCore::delete_task(const std::string &task_name)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
@@ -78,7 +82,7 @@ namespace flowhook {
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
 
-    Result<void> FlowHookCore::activate_task(std::string &task_name)
+    Result<void> FlowHookCore::activate_task(const std::string &task_name)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
@@ -93,7 +97,7 @@ namespace flowhook {
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
 
-    Result<void> FlowHookCore::deactivate_task(std::string &task_name)
+    Result<void> FlowHookCore::deactivate_task(const std::string &task_name)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
@@ -108,7 +112,7 @@ namespace flowhook {
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
 
-    Result<void> FlowHookCore::set_task_path(std::string &task_name, std::string &path)
+    Result<void> FlowHookCore::set_task_path(const std::string &task_name, const std::string &path)
     {
         if(!fs::exists(path))
         {
@@ -127,7 +131,7 @@ namespace flowhook {
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
 
-    Result<void> FlowHookCore::delete_task_path(std::string &task_name, std::string &path)
+    Result<void> FlowHookCore::delete_task_path(const std::string &task_name, const std::string &path)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
@@ -142,7 +146,7 @@ namespace flowhook {
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
 
-    Result<void> FlowHookCore::set_task_command(std::string &task_name, std::string &command)
+    Result<void> FlowHookCore::set_task_command(const std::string &task_name, const std::string &command)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
@@ -156,7 +160,7 @@ namespace flowhook {
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
 
-    Result<void> FlowHookCore::delete_task_command(std::string &task_name, std::string &command)
+    Result<void> FlowHookCore::delete_task_command(const std::string &task_name, const std::string &command)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
@@ -170,8 +174,13 @@ namespace flowhook {
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
 
-    Result<void> FlowHookCore::set_task_on_success(std::string &task_name, std::string &command)
+    Result<void> FlowHookCore::set_task_on_success(const std::string &task_name, const std::string &command)
     {
+        if(task_name.empty() || command.empty())
+        {
+            return Result<void>::Err(FWError::make(ErrorCode::EMPTY_VALUE, "Error: task name and command cannot be empty"));
+        }
+
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
             string name = (*it)->get_task_name();
@@ -184,7 +193,7 @@ namespace flowhook {
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
 
-    Result<void> FlowHookCore::delete_task_on_success(std::string &task_name, std::string &command)
+    Result<void> FlowHookCore::delete_task_on_success(const std::string &task_name, const std::string &command)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
@@ -199,8 +208,12 @@ namespace flowhook {
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
 
-    Result<void> FlowHookCore::set_task_on_failure(std::string &task_name, std::string &command)
+    Result<void> FlowHookCore::set_task_on_failure(const std::string &task_name, const std::string &command)
     {
+        if(task_name.empty() || command.empty())
+        {
+            return Result<void>::Err(FWError::make(ErrorCode::EMPTY_VALUE, "Error: task name and command cannot be empty"));
+        }
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
             string name = (*it)->get_task_name();
@@ -213,8 +226,24 @@ namespace flowhook {
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
 
+    Result<void> FlowHookCore::delete_task_on_failure(const std::string &task_name, const std::string &command)
+    {
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            string name = (*it)->get_task_name();
+            if(name == task_name)
+            {
+                TEST((*it)->delete_on_failure(command));
+                return Result<void>::Ok();
+            }
+        }
 
-    Result<void> FlowHookCore::start_task(std::string &task_name)
+        return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
+    }
+
+
+
+    Result<void> FlowHookCore::start_task(const std::string &task_name)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
@@ -232,13 +261,17 @@ namespace flowhook {
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
 
-    Result<void> FlowHookCore::stop_task(std::string &task_name)
+    Result<void> FlowHookCore::stop_task(const std::string &task_name)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
             string name = (*it)->get_task_name();
             if(name == task_name)
             {
+                if(!(*it)->is_running())
+                {
+                    return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_RUNNING, "Error: task not running"));
+                }
                 (*it)->stop();
                 return Result<void>::Ok();
             }

@@ -2,6 +2,7 @@
 *.d
 
 compile_commands.json
+diagram.md
 # Compiled Object files
 *.slo
 *.lo
