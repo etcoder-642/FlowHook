@@ -1,8 +1,6 @@
 # Prerequisites
 *.d
 
-compile_commands.json
-diagram.md
 # Compiled Object files
 *.slo
 *.lo
@@ -58,7 +56,6 @@ install_manifest.txt
 compile_commands.json
 
 # Temporary files
-tmp/
 *.tmp
 *.log
 *.bak

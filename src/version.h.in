@@ -1,2 +1,0 @@
-#pragma once
-#define FLOWHOOK_VERSION "@PROJECT_VERSION@"

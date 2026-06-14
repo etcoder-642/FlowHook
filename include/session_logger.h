@@ -3,20 +3,22 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <iostream>
 #include <fstream>
 
 #include "filewatcher.h"
+#include "display.h"
 #include "json.hpp"
+#include "error/error.h"
 #include "error/result.h"
-#include "types.h"
 
-namespace flowhook
+namespace l_fw
 {
     using json = nlohmann::json;
     class SessionLogger {
         private:
             std::fstream file;
-            json session = json::object();
+            json session;
 
             bool is_running;
             bool flushed;
@@ -24,8 +26,8 @@ namespace flowhook
             SessionLogger();
             ~SessionLogger();
 
-            Result<void> start(const std::string &file_path);
-            Result<void> log_execution(const ExecutionResult &execution_result);
+            Result<void> start(std::string &file_path);
+            Result<void> log_event(_i_event e, int success_code, std::string terminal_msg, std::vector<std::string> commands);
             Result<void> stop();
     };
 }

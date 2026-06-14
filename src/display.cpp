@@ -1,12 +1,12 @@
 #include <iostream>
 #include <string>
 
-#include "./include/display.h"
-#include "./include/filewatcher.h"
+#include "../include/display.h"
+#include "../include/filewatcher.h"
 
 using namespace std;
 
-namespace flowhook
+namespace l_fw
 {
     void print_header()
     {
