@@ -8,7 +8,7 @@
 
 #include "error.h"
 
-namespace l_fw
+namespace flowhook
 {
     template <typename T>
     class Result

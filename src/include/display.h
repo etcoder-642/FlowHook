@@ -6,7 +6,7 @@
 
 #include "../include/filewatcher.h"
 
-namespace l_fw {
+namespace flowhook {
     void print_header();
     std::string receive_input(const std::string &msg);
     void print_list(const std::string &msg, const std::vector<std::string> &list);
