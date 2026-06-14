@@ -64,15 +64,20 @@ namespace flowhook
 
     struct Task
     {
-        std::string name;
-        std::string working_directory;
-        std::vector<std::string> commands;
-        std::vector<std::string> paths;
+        std::string name = "";
+        std::string working_directory = "";
+        std::vector<std::string> commands = {};
+        std::vector<std::string> paths = {};
 
-        std::vector<std::string> on_success;
-        std::vector<std::string> on_failure;
-        bool isActive;
+        std::vector<std::string> on_success = {};
+        std::vector<std::string> on_failure = {};
+        bool isActive = false;
         bool isRunning = false;
+
+        bool isNull() const {
+            return name.empty() && working_directory.empty() && commands.empty() && paths.empty() &&
+                on_success.empty() && on_failure.empty() && !isActive && !isRunning;
+        }
     };
 
     struct ExecutionResult

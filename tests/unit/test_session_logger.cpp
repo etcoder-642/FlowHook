@@ -1,5 +1,4 @@
 #include <filesystem>
-#include <fstream>
 #include <vector>
 #include <string>
 
@@ -7,7 +6,6 @@
 #include "../../src/include/session_logger.h"
 #include "../../src/include/types.h"
 #include "../utest.h"
-#include "../../src/include/json.hpp"
 
 namespace fs = std::filesystem;
 using namespace flowhook;
@@ -26,8 +24,8 @@ struct SessionLoggerFixture
 UTEST_F_SETUP(SessionLoggerFixture)
 {
     WatchEvent e(IN_MODIFY, "file", "/tmp/sl_test_file.txt", 0);
-    utest_fixture->er = new ExecutionResult{1, 0, e, "log", vector<string>{"ls"}};
-    utest_fixture->er2 = new ExecutionResult{2, 0, e, "log", vector<string>{"ls"}};
+    utest_fixture->er = new ExecutionResult(1, 0, e, "log", vector<string>{"ls"});
+    utest_fixture->er2 = new ExecutionResult(2, 0, e, "log", vector<string>{"ls"});
     utest_fixture->sl = new SessionLogger();
 
     fs::create_directories("/tmp/sl_test");

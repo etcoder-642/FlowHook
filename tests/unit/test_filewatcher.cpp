@@ -1,6 +1,5 @@
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 
 #include "../../src/include/filewatcher.h"
 #include "../../src/include/types.h"

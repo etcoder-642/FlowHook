@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(FlowHook)
+project(FlowHook VERSION 0.0.0)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+configure_file(src/version.h.in version.h)
 set(CMAKE_CXX_STANDARD 20)
 
 find_package(ftxui CONFIG REQUIRED)
@@ -35,7 +37,13 @@ add_executable(test_session_logger tests/unit/test_session_logger.cpp)
 target_link_libraries(test_session_logger PRIVATE flowhook_lib)
 target_include_directories(test_session_logger PRIVATE tests)
 
+add_executable(test_config_manager tests/unit/test_config_manager.cpp)
+target_link_libraries(test_config_manager PRIVATE flowhook_lib)
+target_include_directories(test_config_manager PRIVATE tests)
+target_compile_definitions(test_config_manager PRIVATE FLOWHOOK_TESTING)
+
 enable_testing()
 add_test(NAME flowhook_filewatcher_tests COMMAND test_filewatcher)
 add_test(NAME flowhook_task_runner_tests COMMAND test_task_runner)
 add_test(NAME flowhook_session_logger_tests COMMAND test_session_logger)
+add_test(NAME flowhook_config_manager_tests COMMAND test_config_manager)

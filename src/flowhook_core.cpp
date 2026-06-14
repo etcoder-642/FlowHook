@@ -31,15 +31,6 @@ namespace flowhook {
     Result<void> FlowHookCore::init()
     {
         config_manager = TRY(ConfigManager::create(), void);
-        TEST(config_manager->init());
-        auto _execute_load = config_manager->load();
-        if(_execute_load.isErr())
-        {
-            if(_execute_load.unwrapErr().code != ErrorCode::CONFIG_FILE_EMPTY)
-            {
-                return Result<void>::Err(_execute_load.unwrapErr());
-            }
-        }
         return Result<void>::Ok();
     }
 
@@ -101,7 +92,7 @@ namespace flowhook {
 
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
-    
+
     Result<void> FlowHookCore::deactivate_task(std::string &task_name)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
@@ -164,7 +155,7 @@ namespace flowhook {
         }
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
-    
+
     Result<void> FlowHookCore::delete_task_command(std::string &task_name, std::string &command)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
@@ -192,7 +183,7 @@ namespace flowhook {
         }
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
     }
-    
+
     Result<void> FlowHookCore::delete_task_on_success(std::string &task_name, std::string &command)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
