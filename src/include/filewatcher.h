@@ -43,11 +43,11 @@ namespace flowhook
         Result<void> event_loop(int timeout);
 
         FileWatcher() = default;
+        Result<void> init();
 
     public:
         // Factory Function constuctor
         static Result<FileWatcher*> create();
-        Result<void> init();
 
         // destructor
         ~FileWatcher()
@@ -61,8 +61,8 @@ namespace flowhook
         FileWatcher &operator=(const FileWatcher &) = delete;
         bool is_running() const { return isWatching; }
 
-        Result<void> add_path(std::string &arg);
-        Result<void> remove_path(std::string &arg);
+        Result<void> add_path(const std::string &arg);
+        Result<void> remove_path(const std::string &arg);
         Result<void> start(int timeout);
         Result<void> stop();
 

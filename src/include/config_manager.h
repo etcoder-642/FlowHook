@@ -1,31 +1,32 @@
 #include <fstream>
-#include <vector>
-#include <string>
 
-#include "error/error.h"
 #include "error/result.h"
 #include "json.hpp"
-#include "task_runner.h"
+#include "types.h"
 
 
-namespace flowhook 
+
+namespace flowhook
 {
     class ConfigManager {
+        #ifdef FLOWHOOK_TESTING
+            friend class ConfigManagerTest;
+        #endif
         private:
-            std::fstream file;
-            json config_obj = json::object();
+            nlohmann::json config_obj = nlohmann::json::object();
 
-            Result<json> convert_task_to_json(const Task &task);
-            Result<Task> convert_json_to_task(const json &json_task);
             bool isflushed;
+            Result<nlohmann::json> convert_task_to_json(const Task &task);
+            Result<Task> convert_json_to_task(const nlohmann::json &json_task);
+
             ConfigManager() = default;
+            Result<void> load(std::fstream &file);
         public:
             static Result<ConfigManager*> create();
             ~ConfigManager();
+            nlohmann::json getjson() const { return config_obj; }
             bool is_flushed() const { return isflushed; }
 
-            Result<void> init();
-            Result<std::vector<Task>> load();
             Result<void> log_task(const Task &task);
             Result<void> update_task(const Task &task);
             Result<void> purge_config();

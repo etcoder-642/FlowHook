@@ -3,8 +3,6 @@
 
 
 #include "task_runner.h"
-#include "display.h"
-#include "session_logger.h"
 #include "config_manager.h"
 #include "error/result.h"
 #include "types.h"
@@ -17,35 +15,34 @@ namespace flowhook {
             FlowHookCore() = default;
 
             bool isValidDir(std::string &path);
+            Result<void> init();
         public:
             static Result<FlowHookCore*> create();
             ~FlowHookCore();
 
-            Result<void> init();
+            Result<void> create_task(const std::string &task_name, const std::string &working_directory);
+            Result<void> delete_task(const std::string &task_name);
 
-            Result<void> create_task(std::string &task_name, std::string &working_directory);
-            Result<void> delete_task(std::string &task_name);
-
-            Result<void> start_task(std::string &task_name);
-            Result<void> stop_task(std::string &task_name);
+            Result<void> start_task(const std::string &task_name);
+            Result<void> stop_task(const std::string &task_name);
 
 
-            Result<void> set_task_path(std::string &task_name, std::string &path);
-            Result<void> delete_task_path(std::string &task_name, std::string &path);
+            Result<void> set_task_path(const std::string &task_name, const std::string &path);
+            Result<void> delete_task_path(const std::string &task_name, const std::string &path);
 
-            Result<void> set_task_command(std::string &task_name, std::string &command);
-            Result<void> delete_task_command(std::string &task_name, std::string &command);
+            Result<void> set_task_command(const std::string &task_name, const std::string &command);
+            Result<void> delete_task_command(const std::string &task_name, const std::string &command);
 
-            Result<void> set_task_on_success(std::string &task_name, std::string &command);
-            Result<void> delete_task_on_success(std::string &task_name, std::string &command);
-            Result<void> set_task_on_failure(std::string &task_name, std::string &command);
-            Result<void> delete_task_on_failure(std::string &task_name, std::string &command);
+            Result<void> set_task_on_success(const std::string &task_name, const std::string &command);
+            Result<void> delete_task_on_success(const std::string &task_name, const std::string &command);
+            Result<void> set_task_on_failure(const std::string &task_name, const std::string &command);
+            Result<void> delete_task_on_failure(const std::string &task_name, const std::string &command);
 
             Result<void> start_all();
             Result<void> stop_all();
 
-            Result<void> activate_task(std::string &task_name);
-            Result<void> deactivate_task(std::string &task_name);
+            Result<void> activate_task(const std::string &task_name);
+            Result<void> deactivate_task(const std::string &task_name);
 
             Result<void> start_active();
             Result<void> stop_active();

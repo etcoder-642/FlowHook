@@ -47,7 +47,6 @@ Result<void> FileWatcher::init()
 
 Result<WatchEvent> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
 {
-    cout << "[FLOWHOOK] FileWatcher::handle_events:: handling detected events... " << endl;
     WatchEvent e;
     const struct inotify_event *event;
     char buffer[4096];
@@ -72,21 +71,16 @@ Result<WatchEvent> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
         {
             event = reinterpret_cast<const struct inotify_event *>(ptr);
 
-            // cout << "[FLOWHOOK]::handle_events:: event mask: " << event->mask << endl;
-
             if (event->mask & IN_CLOSE_WRITE)
             {
-                cout << "[FLOWHOOK] IN_CLOSE_WRITE detected" << endl;
                 e.event_mask = IN_CLOSE_WRITE;
             }
             else if (event->mask & IN_MODIFY)
             {
-                cout << "[FLOWHOOK] IN_MODIFY detected" << endl;
                 e.event_mask = IN_MODIFY;
             }
             else if(event->mask & IN_MOVED_TO)
             {
-                cout << "[FLOWHOOK] IN_MOVED_TO detected" << endl;
                 e.event_mask = IN_MOVED_TO;
             }
 
@@ -115,9 +109,27 @@ Result<WatchEvent> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
     return Result<WatchEvent>::Err(ErrorCode::EVENT_NOT_FOUND, "Error: empty event");
 }
 
-Result<void> FileWatcher::add_path(string &arg)
+Result<void> FileWatcher::add_path(const string &arg)
 {
     lock_guard<mutex> lock(registry_mutex);
+    // check if path already exists
+    for(auto [w, p]: watch_registry)
+    {
+        if(arg == p){
+            return Result<void>::Err(FWError::make(
+                ErrorCode::PATH_ALREADY_EXISTS,
+                "Error: Path already exists"
+            ));
+        }
+    }
+    // check if path is empty
+    if(arg.empty())
+    {
+        return Result<void>::Err(FWError::make(
+            ErrorCode::EMPTY_VALUE, "Error: path is empty"));
+    }
+
+    // add path to inotify
     int wd = inotify_add_watch(inotify_fd, arg.c_str(),
                                IN_MOVED_TO | IN_MOVED_FROM | IN_MODIFY | IN_CLOSE_WRITE);
     if (wd == -1)
@@ -129,9 +141,26 @@ Result<void> FileWatcher::add_path(string &arg)
     return Result<void>::Ok();
 }
 
-Result<void> FileWatcher::remove_path(string &arg)
+Result<void> FileWatcher::remove_path(const string &arg)
 {
     lock_guard<mutex> lock(registry_mutex);
+    // check if path exists
+    bool path_exists = false;
+    for(auto [w, p]: watch_registry)
+    {
+        if(arg == p){
+            path_exists = true;
+        }
+    }
+    if (!path_exists)
+    {
+        return Result<void>::Err(FWError::make(
+            ErrorCode::PATH_NOT_FOUND,
+            "Error: Path not found"
+        ));
+    }
+
+    // remove path from inotify
     int _r_wd = r_watch_registry[arg];
     inotify_rm_watch(inotify_fd, _r_wd);
     watch_registry.erase(_r_wd);
@@ -142,8 +171,16 @@ Result<void> FileWatcher::remove_path(string &arg)
 Result<void> FileWatcher::link_event(uint32_t event_mask, WatchCallback callback)
 {
     lock_guard<mutex> lock(registry_mutex);
+    if (event_mask != IN_MODIFY && event_mask != IN_CLOSE_WRITE && event_mask != IN_MOVED_TO)
+    {
+        return Result<void>::Err(FWError::make(
+            ErrorCode::EVENT_NOT_SUPPORTED,
+            "Error: no such event"
+        ));
+    }
+
+    // check if callback already exists
     vector<WatchCallback> temp_cb = event_callbacks[event_mask];
-    cout << "[FLOWHOOK] Linking event " << event_mask << " to callback " << endl;
     for (auto &cb : temp_cb)
     {
         if (cb == callback)
@@ -180,7 +217,6 @@ Result<void> FileWatcher::unlink_event(uint32_t event_mask, WatchCallback callba
 
 Result<void> FileWatcher::event_loop(int timeout)
 {
-    cout << "[FLOWHOOK] FileWatcher:BackgroundThread event poll starting... " << endl;
     while (isWatching)
     {
         poll_num = poll(fd, nfds, timeout);
@@ -243,7 +279,6 @@ Result<void> FileWatcher::start(int timeout)
     try
     {
         isWatching = true;
-        cout << "[FLOWHOOK]:FileWatcher Starting Background Thread... " << endl;
         background_thread = std::thread(&FileWatcher::event_loop, this, timeout);
     }
     catch (std::system_error &e)
@@ -278,12 +313,6 @@ Result<vector<string>> FileWatcher::get_watch_list()
     for (auto &[wd, path] : watch_registry)
     {
         list.push_back(path);
-    }
-    if (list.empty())
-    {
-        return Result<vector<string>>::Err(FWError::make(
-            ErrorCode::FILEWATCHER_EMPTY,
-            "Error: no registered paths"));
     }
     return Result<vector<string>>::Ok(list);
 }
