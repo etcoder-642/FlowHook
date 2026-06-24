@@ -2,6 +2,7 @@
 #include "./include/CLI11.hpp"
 #include <filesystem>
 #include <iostream>
+#include <unistd.h>
 
 namespace fs = std::filesystem;
 using namespace flowhook;
@@ -131,6 +132,7 @@ int main(int argc, char **argv) {
                   << std::endl;
         return;
       }
+      pause();
       return;
     } else if (!run_task_name.empty()) {
       auto r = fh->start_task(run_task_name);
@@ -139,6 +141,7 @@ int main(int argc, char **argv) {
                   << std::endl;
         return;
       }
+      pause();
     }
   });
 

@@ -1,15 +1,12 @@
-#include <iostream>
 #include <vector>
 #include <string>
-#include <iostream>
 #include <unistd.h>
 #include <sys/inotify.h>
+#include <iostream>
 
 #include <errno.h>
-#include <stdio.h>
 #include <poll.h>
 #include <stdlib.h>
-#include <map>
 #include <unordered_map>
 
 #include <cstring>
@@ -73,15 +70,26 @@ Result<WatchEvent> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
 
             if (event->mask & IN_CLOSE_WRITE)
             {
+                cout << "[FLOWHOOK] - EVENT detected - IN_CLOSE_WRITE" << endl;
                 e.event_mask = IN_CLOSE_WRITE;
             }
             else if (event->mask & IN_MODIFY)
             {
+                cout << "[FLOWHOOK] - EVENT detected - IN_MODIFY" << endl;
                 e.event_mask = IN_MODIFY;
             }
             else if(event->mask & IN_MOVED_TO)
             {
+                cout << "[FLOWHOOK] - EVENT detected - IN_MOVED_TO" << endl;
                 e.event_mask = IN_MOVED_TO;
+            }
+            else if(event->mask & IN_MOVED_FROM)
+            {
+                cout << "[FLOWHOOK] - EVENT detected - IN_MOVED_FROM" << endl;
+                e.event_mask = IN_MOVED_FROM;
+            }
+            else {
+                cout << "[FLOWHOOK] - EVENT detected " << event->mask << endl;
             }
 
             string base_path = watch_registry[event->wd];
@@ -112,6 +120,7 @@ Result<WatchEvent> FileWatcher::handle_events(int fd, vector<int> wd, int argc)
 Result<void> FileWatcher::add_path(const string &arg)
 {
     lock_guard<mutex> lock(registry_mutex);
+    cout << "[DEBUG] inotify_add_watch on: " << arg << endl;
     // check if path already exists
     for(auto [w, p]: watch_registry)
     {
@@ -171,7 +180,7 @@ Result<void> FileWatcher::remove_path(const string &arg)
 Result<void> FileWatcher::link_event(uint32_t event_mask, WatchCallback callback)
 {
     lock_guard<mutex> lock(registry_mutex);
-    if (event_mask != IN_MODIFY && event_mask != IN_CLOSE_WRITE && event_mask != IN_MOVED_TO)
+    if (event_mask != IN_MODIFY && event_mask != IN_CLOSE_WRITE && event_mask != IN_MOVED_TO && event_mask != IN_MOVED_FROM)
     {
         return Result<void>::Err(FWError::make(
             ErrorCode::EVENT_NOT_SUPPORTED,
@@ -217,6 +226,9 @@ Result<void> FileWatcher::unlink_event(uint32_t event_mask, WatchCallback callba
 
 Result<void> FileWatcher::event_loop(int timeout)
 {
+    auto last_event_time = std::chrono::steady_clock::now();
+    const auto debounce_ms = std::chrono::milliseconds(300);
+
     while (isWatching)
     {
         poll_num = poll(fd, nfds, timeout);
@@ -238,6 +250,11 @@ Result<void> FileWatcher::event_loop(int timeout)
 
         if (fd[0].revents & POLLIN)
         {
+            auto now = std::chrono::steady_clock::now();
+            if (now - last_event_time < debounce_ms) continue;
+            last_event_time = now;
+
+            cout << "[DEBUG] POLLIN received" << endl;
             WatchEvent e;
             vector<WatchCallback> callback;
             {
@@ -248,7 +265,7 @@ Result<void> FileWatcher::event_loop(int timeout)
                 {
                     _wd_keys.push_back(wd);
                 }
-                auto e = TRY(handle_events(fd[0].fd, _wd_keys, watch_registry.size()), void);
+                e = TRY(handle_events(fd[0].fd, _wd_keys, watch_registry.size()), void);
                 callback = event_callbacks[e.event_mask];
             }
             if (!callback.empty())
@@ -265,6 +282,7 @@ Result<void> FileWatcher::event_loop(int timeout)
 
 Result<void> FileWatcher::start(int timeout)
 {
+    cout << "[FLOWHOOK] - filewatcher started..." << endl;
     if (timeout < 10)
     {
         timeout = 10;
@@ -278,11 +296,13 @@ Result<void> FileWatcher::start(int timeout)
     }
     try
     {
+        cout << "[FLOWHOOK] - launching a background thread to watch files ..." << endl;
         isWatching = true;
         background_thread = std::thread(&FileWatcher::event_loop, this, timeout);
     }
     catch (std::system_error &e)
     {
+
         return Result<void>::Err(FWError::make(
             ErrorCode::SYS_THREAD_FAILED,
             "Error: starting background thread failed"));

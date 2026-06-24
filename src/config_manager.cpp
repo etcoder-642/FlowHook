@@ -197,6 +197,7 @@ namespace flowhook
             {
                 json _json_task = TRY(convert_task_to_json(task), void);
                 *it = _json_task;
+                flush();
                 return Result<void>::Ok();
             }
         }

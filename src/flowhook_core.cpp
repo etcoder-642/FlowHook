@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <filesystem>
+#include <iostream>
 
 #include "include/flowhook_core.h"
 #include "include/error/result.h"
@@ -31,6 +32,26 @@ namespace flowhook {
     Result<void> FlowHookCore::init()
     {
         config_manager = TRY(ConfigManager::create(), void);
+        vector<Task> tasks = TRY(config_manager->get_tasks(), void);
+        for(auto task: tasks)
+        {
+            TaskRunner* tr = TRY(TaskRunner::create(task.name, task.working_directory), void);
+            for(auto c: task.commands)
+                tr->add_command(c);
+            for(auto p: task.paths)
+                tr->add_path(p);
+            for(auto s: task.on_success)
+                tr->add_on_success(s);
+            for(auto f: task.on_failure)
+                tr->add_on_failure(f);
+            if(task.isActive)
+            {
+                tr->activate();
+            }else {
+                tr->deactivate();
+            }
+            task_runners.push_back(tr);
+        }
         return Result<void>::Ok();
     }
 
@@ -90,6 +111,7 @@ namespace flowhook {
             if(name == task_name)
             {
                 (*it)->activate();
+                config_manager->update_task((*it)->get_task());
                 return Result<void>::Ok();
             }
         }
@@ -124,6 +146,7 @@ namespace flowhook {
             if(name == task_name)
             {
                 TEST((*it)->add_path(path));
+                config_manager->update_task((*it)->get_task());
                 return Result<void>::Ok();
             }
         }
@@ -154,6 +177,7 @@ namespace flowhook {
             if(name == task_name)
             {
                 TEST((*it)->add_command(command));
+                config_manager->update_task((*it)->get_task());
                 return Result<void>::Ok();
             }
         }
@@ -187,6 +211,7 @@ namespace flowhook {
             if(name == task_name)
             {
                 TEST((*it)->add_on_success(command));
+                config_manager->update_task((*it)->get_task());
                 return Result<void>::Ok();
             }
         }
@@ -220,6 +245,7 @@ namespace flowhook {
             if(name == task_name)
             {
                 TEST((*it)->add_on_failure(command));
+                config_manager->update_task((*it)->get_task());
                 return Result<void>::Ok();
             }
         }
@@ -245,15 +271,20 @@ namespace flowhook {
 
     Result<void> FlowHookCore::start_task(const std::string &task_name)
     {
+        cout << "[FLOWHOOK] - starting_task...."<< endl;
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
+            cout << "[FLOWHOOK] - looping through tasks to find the correct one ..." << endl;
             string name = (*it)->get_task_name();
             if(name == task_name)
             {
+                cout << "[FLOWHOOK] - task found..." << endl;
                 if((*it)->is_running())
                 {
+                    cout << "[FLOWHOOK] - task is already running." << endl;
                     return Result<void>::Err(FWError::make(ErrorCode::TASK_ALREADY_RUNNING, "Error: task already running"));
                 }
+                cout << "[FLOWHOOK] - starting the task_runner..." << endl;
                 (*it)->start();
                 return Result<void>::Ok();
             }

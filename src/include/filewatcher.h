@@ -7,17 +7,14 @@
 #include <sys/inotify.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <errno.h>
 #include <poll.h>
 
 #include <unordered_map>
 #include <thread>
-#include <stdexcept>
 #include <mutex>
 #include <atomic>
 
 #include "error/result.h"
-#include "error/error.h"
 #include "types.h"
 
 namespace flowhook
