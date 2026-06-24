@@ -30,7 +30,7 @@ namespace flowhook
         TaskRunner *ptr;
         Result<void> (TaskRunner::*handler)(const WatchEvent &e) = nullptr;
         Result<void> (*raw_callback)(const WatchEvent &e) = nullptr;
-        
+
         static WatchCallback from_raw(Result<void> (*fn)(const WatchEvent &e))
         {
             WatchCallback cb;
@@ -66,8 +66,12 @@ namespace flowhook
     {
         std::string name = "";
         std::string working_directory = "";
+        int watching_depth = 1;
         std::vector<std::string> commands = {};
         std::vector<std::string> paths = {};
+
+        std::vector<std::string> ignored_patterns = {};
+        std::vector<std::string> ignored_paths = {};
 
         std::vector<std::string> on_success = {};
         std::vector<std::string> on_failure = {};
@@ -76,7 +80,8 @@ namespace flowhook
 
         bool isNull() const {
             return name.empty() && working_directory.empty() && commands.empty() && paths.empty() &&
-                on_success.empty() && on_failure.empty() && !isActive && !isRunning;
+                on_success.empty() && on_failure.empty() && !isActive && !isRunning && watching_depth == 1 &&
+                ignored_paths.empty() && ignored_patterns.empty();
         }
     };
 

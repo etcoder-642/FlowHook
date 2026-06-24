@@ -12,6 +12,10 @@ namespace flowhook {
         private:
             ConfigManager* config_manager;
             std::vector<TaskRunner*> task_runners;
+
+            std::vector<std::string> default_ignored_patterns;
+            std::vector<std::string> default_ignored_paths;
+
             FlowHookCore() = default;
 
             bool isValidDir(std::string &path);
@@ -20,6 +24,7 @@ namespace flowhook {
             static Result<FlowHookCore*> create();
             ~FlowHookCore();
 
+            Result<void> set_default_ignored();
             Result<void> create_task(const std::string &task_name, const std::string &working_directory);
             Result<void> delete_task(const std::string &task_name);
 
@@ -37,6 +42,9 @@ namespace flowhook {
             Result<void> delete_task_on_success(const std::string &task_name, const std::string &command);
             Result<void> set_task_on_failure(const std::string &task_name, const std::string &command);
             Result<void> delete_task_on_failure(const std::string &task_name, const std::string &command);
+
+            Result<void> set_ignored_path(const std::string &task_name, const std::string &path);
+            Result<void> set_ignored_pattern(const std::string &task_name, const std::string &pattern);
 
             Result<void> start_all();
             Result<void> stop_all();

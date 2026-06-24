@@ -159,6 +159,14 @@ namespace flowhook
         {
             _json_task["on_failure"].push_back(cmd);
         }
+        for (auto &path : task.ignored_paths)
+        {
+            _json_task["ignored_paths"].push_back(path);
+        }
+        for (auto &pattern : task.ignored_patterns)
+        {
+            _json_task["ignored_patterns"].push_back(pattern);
+        }
         _json_task["isActive"] = task.isActive;
         return Result<json>::Ok(_json_task);
     }

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <chrono>
 
 #include "types.h"
 #include "filewatcher.h"
@@ -17,6 +18,9 @@ namespace flowhook
         SessionLogger *sl;
         Task task;
         std::vector<WatchCallback> callbacks;
+
+        std::chrono::steady_clock::time_point last_executed;
+        std::chrono::milliseconds cooldown_ms{500};
 
         bool flushed;
         bool is_init = false;
@@ -36,6 +40,7 @@ namespace flowhook
         void activate() { task.isActive = true; }
         void deactivate() { task.isActive = false; }
         bool is_running() const { return task.isRunning; }
+        Result<void> set_depth(int num);
 
         Result<void> change_task_name(const std::string &task_name);
         Result<void> change_working_directory(const std::string &working_directory);
@@ -50,6 +55,9 @@ namespace flowhook
 
         Result<void> add_path(const std::string &path);
         Result<void> delete_path(const std::string &path);
+
+        Result<void> add_ignored_path(const std::string &path);
+        Result<void> add_ignored_pattern(const std::string &pattern);
 
         Result<void> add_callback(const WatchCallback &callback);
         Result<void> delete_callback(const WatchCallback &callback);

@@ -52,6 +52,7 @@ namespace flowhook
         SYS_ALLOC_FAILED,
 
         EMPTY_VALUE,
+        INVALID_DEPTH,
 
         UNKNOWN
     };
@@ -69,7 +70,7 @@ namespace flowhook
         std::string message;
 
         std::vector<StackFrame> stackTrace;
-        
+
         FWError(ErrorCode code, std::string message) : code(code), message(message) {}
 
         void pushFrame(const std::source_location &loc)

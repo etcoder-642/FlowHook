@@ -57,11 +57,17 @@ int main(int argc, char **argv) {
 
   std::string command_on_success = "";
   std::string command_on_failure = "";
+  std::string ignored_path = "";
+  std::string ignored_pattern = "";
 
   add->add_option("--on-success", command_on_success,
                   "Command to run on success");
   add->add_option("--on-failure", command_on_failure,
                   "Command to run on failure");
+  add->add_option("--ignored-path", ignored_path,
+                  "Ignored path");
+  add->add_option("--ignored-pattern", ignored_pattern,
+                  "Ignored pattern");
 
   add->callback([&]() {
     fs::path cwd = fs::current_path();
@@ -104,6 +110,22 @@ int main(int argc, char **argv) {
       auto r = fh->set_task_on_failure(add_task_name, command_on_failure);
       if (r.isErr()) {
         std::cerr << "Failed to set task on failure: " << r.getErrMessage()
+                  << std::endl;
+        return;
+      }
+    }
+    if (!ignored_path.empty()) {
+      auto r = fh->set_ignored_path(add_task_name, ignored_path);
+      if (r.isErr()) {
+        std::cerr << "Failed to set ignored path: " << r.getErrMessage()
+                  << std::endl;
+        return;
+      }
+    }
+    if (!ignored_pattern.empty()) {
+      auto r = fh->set_task_on_failure(add_task_name, ignored_pattern);
+      if (r.isErr()) {
+        std::cerr << "Failed to set ignored pattern: " << r.getErrMessage()
                   << std::endl;
         return;
       }

@@ -4,8 +4,11 @@
 #include <stdio.h>
 #include <filesystem>
 #include <iostream>
+#include <chrono>
 
 #include "include/task_runner.h"
+#include "error/error.h"
+#include "error/result.h"
 #include "include/macros.hpp"
 
 namespace fs = std::filesystem;
@@ -22,11 +25,13 @@ namespace flowhook
 
     Result<void> TaskRunner::init(const string &task_name, const string &working_directory)
     {
+
         fw = TRY(FileWatcher::create(), void);
         task.name = task_name;
         task.working_directory = working_directory;
         flushed = false;
         task.isRunning = false;
+
         sl = new SessionLogger();
         if (!sl)
         {
@@ -34,6 +39,8 @@ namespace flowhook
                 ErrorCode::SYS_ALLOC_FAILED, "Error: allocating memory for session logger"));
         }
         TEST(sl->start(working_directory));
+
+        last_executed = std::chrono::steady_clock::now() - std::chrono::milliseconds(300);
         return Result<void>::Ok();
     }
 
@@ -45,6 +52,24 @@ namespace flowhook
         sl->stop();
         delete sl;
         task.isRunning = false;
+    }
+
+    Result<void> TaskRunner::set_depth(int num)
+    {
+        if(num > 6)
+        {
+            return Result<void>::Err(
+                FWError::make(ErrorCode::INVALID_DEPTH, "Error: invalid depth set - depth too much")
+            );
+        } else if( num < 1)
+        {
+            return Result<void>::Err(
+                FWError::make(ErrorCode::INVALID_DEPTH, "Error: invalid depth set - depth set too low")
+            );
+        }
+
+        task.watching_depth = num;
+        return Result<void>::Ok();
     }
 
     Result<void> TaskRunner::change_task_name(const string &task_name)
@@ -92,6 +117,46 @@ namespace flowhook
         return Result<void>::Ok();
     }
 
+    Result<void> TaskRunner::add_ignored_path(const string &path)
+    {
+        if(path.empty())
+        {
+            return Result<void>::Err(FWError::make(
+                ErrorCode::EMPTY_VALUE, "Error: command is empty"));
+        }
+        for(auto &p : task.ignored_paths)
+        {
+            if(p == path)
+            {
+                return Result<void>::Err(FWError::make(
+                    ErrorCode::PATH_ALREADY_EXISTS, "Error: path already exists"));
+            }
+        }
+        task.ignored_paths.push_back(path);
+        fw->add_ignored_path(path);
+        return Result<void>::Ok();
+    }
+
+    Result<void> TaskRunner::add_ignored_pattern(const string &pattern)
+    {
+        if(pattern.empty())
+        {
+            return Result<void>::Err(FWError::make(
+                ErrorCode::EMPTY_VALUE, "Error: command is empty"));
+        }
+        for(auto &p : task.ignored_patterns)
+        {
+            if(p == pattern)
+            {
+                return Result<void>::Err(FWError::make(
+                    ErrorCode::PATH_ALREADY_EXISTS, "Error: path already exists"));
+            }
+        }
+        task.ignored_patterns.push_back(pattern);
+        fw->add_ignored_pattern(pattern);
+        return Result<void>::Ok();
+    }
+
     Result<void> TaskRunner::add_command(const string &command)
     {
         // check if command is empty
@@ -131,7 +196,7 @@ namespace flowhook
 
     Result<void> TaskRunner::add_path(const string &path)
     {
-        TEST(fw->add_path(path));
+        TEST(fw->add_path(path, task.watching_depth));
         task.paths.push_back(path);
         return Result<void>::Ok();
     }
@@ -223,6 +288,10 @@ namespace flowhook
 
     Result<void> TaskRunner::execute(const WatchEvent &e)
     {
+        auto now = chrono::steady_clock::now();
+        if (now - last_executed < cooldown_ms)
+            return Result<void>::Ok(); // silently skip
+
         std::cout << "[DEBUG] execute called" << std::endl;
         // check if event is null
         if(e.isNull())
@@ -305,7 +374,7 @@ namespace flowhook
             TEST(sl->log_execution(result));
             execution_id++;
         }
-
+        last_executed = chrono::steady_clock::now();
         return Result<void>::Ok();
     }
 

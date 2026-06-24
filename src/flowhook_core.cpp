@@ -29,13 +29,32 @@ namespace flowhook {
         }
     }
 
+    Result<void> FlowHookCore::set_default_ignored()
+    {
+        default_ignored_paths = {
+            "*.o", "*.a", "*.so", "*.out", "*.exe",
+            "*.swp", "*.swo", "*~", ".#*",
+            "*.class", "*.pyc", "*.log"
+        };
+        default_ignored_patterns = {
+            ".git"
+        };
+        return Result<void>::Ok();
+    }
+
     Result<void> FlowHookCore::init()
     {
         config_manager = TRY(ConfigManager::create(), void);
         vector<Task> tasks = TRY(config_manager->get_tasks(), void);
+        set_default_ignored();
         for(auto task: tasks)
         {
             TaskRunner* tr = TRY(TaskRunner::create(task.name, task.working_directory), void);
+            for(auto i: default_ignored_paths)
+                tr->add_ignored_path(i);
+            for(auto ip: default_ignored_patterns)
+                tr->add_ignored_pattern(ip);
+
             for(auto c: task.commands)
                 tr->add_command(c);
             for(auto p: task.paths)
@@ -44,6 +63,11 @@ namespace flowhook {
                 tr->add_on_success(s);
             for(auto f: task.on_failure)
                 tr->add_on_failure(f);
+
+            for(auto i: task.ignored_paths)
+                tr->add_ignored_path(i);
+            for(auto ip: task.ignored_patterns)
+                tr->add_ignored_pattern(ip);
             if(task.isActive)
             {
                 tr->activate();
@@ -162,6 +186,46 @@ namespace flowhook {
             if(name == task_name)
             {
                 TEST((*it)->delete_path(path));
+                return Result<void>::Ok();
+            }
+        }
+
+        return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
+    }
+
+    Result<void> FlowHookCore::set_ignored_path(const std::string &task_name, const std::string &path)
+    {
+        if(!fs::exists(path))
+        {
+            return Result<void>::Err(FWError::make(ErrorCode::PATH_NOT_FOUND, "Error: path not found"));
+        }
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            string name = (*it)->get_task_name();
+            if(name == task_name)
+            {
+                TEST((*it)->add_ignored_path(path));
+                config_manager->update_task((*it)->get_task());
+                return Result<void>::Ok();
+            }
+        }
+
+        return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found"));
+    }
+
+    Result<void> FlowHookCore::set_ignored_pattern(const std::string &task_name, const std::string &pattern)
+    {
+        if(!fs::exists(pattern))
+        {
+            return Result<void>::Err(FWError::make(ErrorCode::PATH_NOT_FOUND, "Error: path not found"));
+        }
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            string name = (*it)->get_task_name();
+            if(name == task_name)
+            {
+                TEST((*it)->add_ignored_pattern(pattern));
+                config_manager->update_task((*it)->get_task());
                 return Result<void>::Ok();
             }
         }
