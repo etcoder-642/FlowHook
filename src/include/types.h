@@ -70,11 +70,11 @@ namespace flowhook
         std::vector<std::string> commands = {};
         std::vector<std::string> paths = {};
 
-        std::vector<std::string> ignored_patterns = {};
-        std::vector<std::string> ignored_paths = {};
-
         std::vector<std::string> on_success = {};
         std::vector<std::string> on_failure = {};
+
+        std::vector<std::string> ignored_patterns = {};
+        std::vector<std::string> ignored_paths = {};
         bool isActive = false;
         bool isRunning = false;
 

@@ -36,14 +36,14 @@ UTEST_F_SETUP(ConfigManagerFixture)
     fs::create_directories("/tmp/cm_test");
     fs::create_directories("/tmp/cm_test2");
 
-    utest_fixture->t = new Task("test_task", "/tmp/cm_test", {"ls"},
-        {"/tmp/cm_test_file.txt"}, vector<string>{"ls"}, vector<string>{"ls"}, true, true);
+    utest_fixture->t = new Task("test_task", "/tmp/cm_test", 3, {"ls"},
+        {"/tmp/cm_test_file.txt"}, vector<string>{"ls"}, vector<string>{"ls"}, {}, {}, true, true);
 
-    utest_fixture->t2 = new Task("test_task2", "/tmp/cm_test2", {"ls"},
-        {"/tmp/cm_test_file.txt"}, vector<string>{"ls"}, vector<string>{"cd, ls"}, true, true);
+    utest_fixture->t2 = new Task("test_task2", "/tmp/cm_test2", 3, {"ls"},
+        {"/tmp/cm_test_file.txt"}, vector<string>{"ls"}, vector<string>{"cd, ls"}, {}, {}, true, true);
 
-    utest_fixture->t3 = new Task("test_task", "/tmp/cm_test3", {"cd", "make"},
-        {"/tmp/cm_test_file.txt"}, vector<string>{"ls"}, vector<string>{"cd, ls"}, true, true);
+    utest_fixture->t3 = new Task("test_task", "/tmp/cm_test3", 3, {"cd", "make"},
+        {"/tmp/cm_test_file.txt"}, vector<string>{"ls"}, vector<string>{"cd, ls"}, {}, {}, true, true);
 }
 
 UTEST_F_TEARDOWN(ConfigManagerFixture)
