@@ -3,7 +3,6 @@
 #include <string>
 #include <stdio.h>
 #include <filesystem>
-#include <iostream>
 #include <chrono>
 
 #include "include/task_runner.h"
@@ -292,24 +291,24 @@ namespace flowhook
         if (now - last_executed < cooldown_ms)
             return Result<void>::Ok(); // silently skip
 
-        std::cout << "[DEBUG] execute called" << std::endl;
+        FW_LOG("[DEBUG] execute called");
         // check if event is null
         if(e.isNull())
         {
-            cout << "[FLOWHOOK] - event is null." << endl;
+            FW_LOG("[FLOWHOOK] - event is null.");
             return Result<void>::Err(FWError::make(ErrorCode::EVENT_NOT_FOUND, "Error: event is null"));
         }
 
         // check if task commands are empty
         if (task.commands.empty())
         {
-            cout << "[FLOWHOOK] - command is empty." << endl;
+            FW_LOG("[FLOWHOOK] - command is empty.");
             return Result<void>::Err(FWError::make(ErrorCode::COMMAND_EMPTY, "Error: no commands to execute"));
         }
 
         for (auto &cmd : task.commands)
         {
-            cout << "[FLOWHOOK] - executing command through pipes ...." << endl;
+            FW_LOG("[FLOWHOOK] - executing command through pipes ....");
             string secure_execution_chain = "cd " + task.working_directory + " && timeout 15s " + cmd + " 2>&1";
             FILE *fp = popen(secure_execution_chain.c_str(), "r");
             if (fp == NULL)
@@ -355,7 +354,7 @@ namespace flowhook
             {
                 for(auto &cmd_i : task.on_failure)
                 {
-                    cout << "[FLOWHOOK] - failure command executing..." << endl;
+                    FW_LOG("[FLOWHOOK] - failure command executing...");
                     string exec_chain = "cd " + task.working_directory + " && timeout 15s " + cmd_i;
                     system(exec_chain.c_str());
                 }
@@ -364,7 +363,7 @@ namespace flowhook
             {
                 for(auto &cmd_i : task.on_success)
                 {
-                    cout << "[FLOWHOOK] - success command executing..." << endl;
+                    FW_LOG("[FLOWHOOK] - success command executing...");
                     string exec_chain = "cd " + task.working_directory + " && timeout 15s " + cmd_i;
                     system(exec_chain.c_str());
                 }
@@ -416,14 +415,14 @@ namespace flowhook
 
     Result<void> TaskRunner::start()
     {
-        cout << "[FLOWHOOK] - task_runner started..." << endl;
+        FW_LOG("[FLOWHOOK] - task_runner started...");
         if(task.isRunning)
         {
             return Result<void>::Err(FWError::make(ErrorCode::TASK_ALREADY_RUNNING, "Error: task runner already running"));
         }
 
         string _file_path = task.working_directory + "/" + task.name;
-        cout << "[FLOWHOOK] - adding path " << _file_path << " to session logger..." << endl;
+        FW_LOG("[FLOWHOOK] - adding path " << _file_path << " to session logger...");
         sl->start(_file_path);
 
 
@@ -431,7 +430,7 @@ namespace flowhook
 
         WatchCallback callback = {this, &TaskRunner::execute};
         TEST(add_callback(callback));
-        cout << "[FLOWHOOK]  - linking callback with events..." << endl;
+        FW_LOG("[FLOWHOOK]  - linking callback with events...");
         for(auto &cb : callbacks)
         {
             TEST(fw->link_event(IN_CLOSE_WRITE, cb));
@@ -440,7 +439,7 @@ namespace flowhook
         }
 
 
-        cout << "[FLOWHOOK] - starting filewatcher..." << endl;
+        FW_LOG("[FLOWHOOK] - starting filewatcher...");
         TEST(fw->start(100));
         return Result<void>::Ok();
     }

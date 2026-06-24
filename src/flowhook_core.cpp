@@ -1,7 +1,6 @@
 #include <vector>
 #include <string>
 #include <filesystem>
-#include <iostream>
 
 #include "include/flowhook_core.h"
 #include "include/error/result.h"
@@ -36,7 +35,7 @@ namespace flowhook {
             "*.swp", "*.swo", "*~", ".#*",
             "*.class", "*.pyc", "*.log"
         };
-        default_ignored_patterns = {
+        default_ignored_paths   = {
             ".git"
         };
         return Result<void>::Ok();
@@ -335,20 +334,20 @@ namespace flowhook {
 
     Result<void> FlowHookCore::start_task(const std::string &task_name)
     {
-        cout << "[FLOWHOOK] - starting_task...."<< endl;
+        FW_LOG("[FLOWHOOK] - starting_task....");
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
-            cout << "[FLOWHOOK] - looping through tasks to find the correct one ..." << endl;
+            FW_LOG("[FLOWHOOK] - looping through tasks to find the correct one ...");
             string name = (*it)->get_task_name();
             if(name == task_name)
             {
-                cout << "[FLOWHOOK] - task found..." << endl;
+                FW_LOG("[FLOWHOOK] - task found...");
                 if((*it)->is_running())
                 {
-                    cout << "[FLOWHOOK] - task is already running." << endl;
+                    FW_LOG( "[FLOWHOOK] - task is already running.");
                     return Result<void>::Err(FWError::make(ErrorCode::TASK_ALREADY_RUNNING, "Error: task already running"));
                 }
-                cout << "[FLOWHOOK] - starting the task_runner..." << endl;
+                FW_LOG("[FLOWHOOK] - starting the task_runner...");
                 (*it)->start();
                 return Result<void>::Ok();
             }

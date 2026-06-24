@@ -4,10 +4,16 @@
 #include <iostream>
 #include <unistd.h>
 
+#include "../../src/include/macros.hpp"
+
 namespace fs = std::filesystem;
 using namespace flowhook;
 
 int main(int argc, char **argv) {
+
+  for (int i = 1; i < argc; i++)
+        if (std::string(argv[i]) == "--verbose")
+            FLOWHOOK_VERBOSE = true;
 
   auto _fh = FlowHookCore::create();
   if (_fh.isErr()) {
@@ -19,6 +25,8 @@ int main(int argc, char **argv) {
 
   CLI::App app{"FlowHook"};
   app.require_subcommand(0, 1);
+
+  app.add_flag("--verbose", FLOWHOOK_VERBOSE, "Enable verbose output");
 
   // init subcommand
   std::string task_name = "";

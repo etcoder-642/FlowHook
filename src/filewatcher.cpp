@@ -67,19 +67,19 @@ Result<WatchEvent> FileWatcher::handle_events(int fd, vector<int> wd,
       event = reinterpret_cast<const struct inotify_event *>(ptr);
 
       if (event->mask & IN_CLOSE_WRITE) {
-        cout << "[FLOWHOOK] - EVENT detected - IN_CLOSE_WRITE" << endl;
+        FW_LOG("[FLOWHOOK] - EVENT detected - IN_CLOSE_WRITE");
         e.event_mask = IN_CLOSE_WRITE;
       } else if (event->mask & IN_MODIFY) {
-        cout << "[FLOWHOOK] - EVENT detected - IN_MODIFY" << endl;
+        FW_LOG("[FLOWHOOK] - EVENT detected - IN_MODIFY");
         e.event_mask = IN_MODIFY;
       } else if (event->mask & IN_MOVED_TO) {
-        cout << "[FLOWHOOK] - EVENT detected - IN_MOVED_TO" << endl;
+        FW_LOG("[FLOWHOOK] - EVENT detected - IN_MOVED_TO");
         e.event_mask = IN_MOVED_TO;
       } else if (event->mask & IN_MOVED_FROM) {
-        cout << "[FLOWHOOK] - EVENT detected - IN_MOVED_FROM" << endl;
+        FW_LOG("[FLOWHOOK] - EVENT detected - IN_MOVED_FROM");
         e.event_mask = IN_MOVED_FROM;
       } else {
-        cout << "[FLOWHOOK] - EVENT detected " << event->mask << endl;
+        FW_LOG("[FLOWHOOK] - EVENT detected " << event->mask);
       }
 
       string base_path = watch_registry[event->wd];
@@ -182,7 +182,7 @@ Result<void> FileWatcher::add_path_internal(const string &arg, int MAX_DEPTH, in
       }
       return Result<void>::Ok();
     }
-    cout << "[DEBUG] inotify_add_watch on: " << arg << endl;
+    FW_LOG("[DEBUG] inotify_add_watch on: " << arg);
     // check if path already exists
     for (auto [w, p] : watch_registry) {
       if (arg == p) {
@@ -300,7 +300,7 @@ Result<void> FileWatcher::event_loop(int timeout) {
         continue;
       last_event_time = now;
 
-      cout << "[DEBUG] POLLIN received" << endl;
+      FW_LOG("[DEBUG] POLLIN received");
       WatchEvent e;
       vector<WatchCallback> callback;
       {
@@ -324,7 +324,7 @@ Result<void> FileWatcher::event_loop(int timeout) {
 }
 
 Result<void> FileWatcher::start(int timeout) {
-  cout << "[FLOWHOOK] - filewatcher started..." << endl;
+  FW_LOG("[FLOWHOOK] - filewatcher started...");
   if (timeout < 10) {
     timeout = 10;
   }
@@ -335,8 +335,8 @@ Result<void> FileWatcher::start(int timeout) {
                       "Error: file watcher already running"));
   }
   try {
-    cout << "[FLOWHOOK] - launching a background thread to watch files ..."
-         << endl;
+    FW_LOG("[FLOWHOOK] - launching a background thread to watch files ..."
+        );
     isWatching = true;
     background_thread = std::thread(&FileWatcher::event_loop, this, timeout);
   } catch (std::system_error &e) {

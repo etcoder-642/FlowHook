@@ -28,3 +28,7 @@
         return Result<ReturnType>::Err(_e);            \
     }                                                  \
 })
+
+inline bool FLOWHOOK_VERBOSE = false;
+
+#define FW_LOG(msg) if (FLOWHOOK_VERBOSE) std::cout << msg << std::endl
