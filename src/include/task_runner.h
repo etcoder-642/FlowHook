@@ -33,7 +33,7 @@ namespace flowhook
         ~TaskRunner();
 
         std::string get_task_name() const { return task.name; }
-        std::string get_working_directory() const { return task.working_directory; }
+        std::string get_task_id() const { return task.id; }
         Task get_task() const { return task; }
 
         bool is_active() const { return task.isActive; }

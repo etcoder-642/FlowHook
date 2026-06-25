@@ -1,3 +1,4 @@
+#pragma once
 #define TRY(expr, ReturnType) ({                       \
     auto _r = (expr);                                  \
     if (_r.isErr())                                    \
@@ -29,6 +30,6 @@
     }                                                  \
 })
 
-inline bool FLOWHOOK_VERBOSE = false;
+extern bool FLOWHOOK_VERBOSE;
 
 #define FW_LOG(msg) if (FLOWHOOK_VERBOSE) std::cout << msg << std::endl

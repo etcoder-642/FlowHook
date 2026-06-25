@@ -64,8 +64,8 @@ namespace flowhook
 
     struct Task
     {
-        std::string name = "";
-        std::string working_directory = "";
+        std::string id = ""; // this is a name that will be used internally and always unique, not assigned by the user. Mostly the absolute path of the cwd
+        std::string name = ""; // user assigned name can be duplicated, defaults to the filename of the cwd
         int watching_depth = 1;
         std::vector<std::string> commands = {};
         std::vector<std::string> paths = {};
@@ -79,7 +79,7 @@ namespace flowhook
         bool isRunning = false;
 
         bool isNull() const {
-            return name.empty() && working_directory.empty() && commands.empty() && paths.empty() &&
+            return id.empty() && name.empty() && commands.empty() && paths.empty() &&
                 on_success.empty() && on_failure.empty() && !isActive && !isRunning && watching_depth == 1 &&
                 ignored_paths.empty() && ignored_patterns.empty();
         }

@@ -24,10 +24,9 @@ namespace flowhook
 
     Result<void> TaskRunner::init(const string &task_name, const string &working_directory)
     {
-
         fw = TRY(FileWatcher::create(), void);
         task.name = task_name;
-        task.working_directory = working_directory;
+        task.id = working_directory;
         flushed = false;
         task.isRunning = false;
 
@@ -39,7 +38,7 @@ namespace flowhook
         }
         TEST(sl->start(working_directory));
 
-        last_executed = std::chrono::steady_clock::now() - std::chrono::milliseconds(300);
+        last_executed = std::chrono::steady_clock::now() - std::chrono::milliseconds(500);
         return Result<void>::Ok();
     }
 
@@ -107,12 +106,12 @@ namespace flowhook
             ));
         }
         // check if working directory already exists
-        if(task.working_directory == working_directory)
+        if(task.id == working_directory)
         {
             return Result<void>::Err(FWError::make(
                 ErrorCode::PATH_ALREADY_EXISTS, "Error: working directory already exists"));
         }
-        task.working_directory = working_directory;
+        task.id = working_directory;
         return Result<void>::Ok();
     }
 
@@ -309,7 +308,7 @@ namespace flowhook
         for (auto &cmd : task.commands)
         {
             FW_LOG("[FLOWHOOK] - executing command through pipes ....");
-            string secure_execution_chain = "cd " + task.working_directory + " && timeout 15s " + cmd + " 2>&1";
+            string secure_execution_chain = "cd " + task.id + " && timeout 15s " + cmd + " 2>&1";
             FILE *fp = popen(secure_execution_chain.c_str(), "r");
             if (fp == NULL)
             {
@@ -355,7 +354,7 @@ namespace flowhook
                 for(auto &cmd_i : task.on_failure)
                 {
                     FW_LOG("[FLOWHOOK] - failure command executing...");
-                    string exec_chain = "cd " + task.working_directory + " && timeout 15s " + cmd_i;
+                    string exec_chain = "cd " + task.id + " && timeout 15s " + cmd_i;
                     system(exec_chain.c_str());
                 }
             }
@@ -364,7 +363,7 @@ namespace flowhook
                 for(auto &cmd_i : task.on_success)
                 {
                     FW_LOG("[FLOWHOOK] - success command executing...");
-                    string exec_chain = "cd " + task.working_directory + " && timeout 15s " + cmd_i;
+                    string exec_chain = "cd " + task.id + " && timeout 15s " + cmd_i;
                     system(exec_chain.c_str());
                 }
             }
@@ -421,7 +420,7 @@ namespace flowhook
             return Result<void>::Err(FWError::make(ErrorCode::TASK_ALREADY_RUNNING, "Error: task runner already running"));
         }
 
-        string _file_path = task.working_directory + "/" + task.name;
+        string _file_path = task.id;
         FW_LOG("[FLOWHOOK] - adding path " << _file_path << " to session logger...");
         sl->start(_file_path);
 

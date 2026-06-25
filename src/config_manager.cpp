@@ -101,7 +101,7 @@ namespace flowhook
     {
         Task _task;
         _task.name = json_task.at("task_name");
-        _task.working_directory = json_task.at("working_directory");
+        _task.id = json_task.at("working_directory");
 
         vector<string> _commands;
         for (auto &cmd : json_task.at("commands"))
@@ -138,7 +138,7 @@ namespace flowhook
     {
         json _json_task = json::object();
         _json_task["task_name"] = task.name;
-        _json_task["working_directory"] = task.working_directory;
+        _json_task["working_directory"] = task.id;
         _json_task["commands"] = json::array();
         for (auto &cmd : task.commands)
         {
@@ -255,7 +255,7 @@ namespace flowhook
         {
             Task _task;
             _task.name = it->at("task_name");
-            _task.working_directory = it->at("working_directory");
+            _task.id = it->at("working_directory");
             _task.commands = it->at("commands");
             _task.paths = it->at("paths");
             _task.on_success = it->at("on_success");

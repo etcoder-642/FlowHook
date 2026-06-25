@@ -1,3 +1,4 @@
+#pragma once
 #include <string>
 #include <vector>
 
@@ -25,32 +26,32 @@ namespace flowhook {
             ~FlowHookCore();
 
             Result<void> set_default_ignored();
-            Result<void> create_task(const std::string &task_name, const std::string &working_directory);
-            Result<void> delete_task(const std::string &task_name);
+            Result<void> create_task(const std::string &task_name, const std::string &task_id);
+            Result<void> delete_task(const std::string &task_id);
 
-            Result<void> start_task(const std::string &task_name);
-            Result<void> stop_task(const std::string &task_name);
+            Result<void> start_task(const std::string &task_id);
+            Result<void> stop_task(const std::string &task_id);
 
 
-            Result<void> set_task_path(const std::string &task_name, const std::string &path);
-            Result<void> delete_task_path(const std::string &task_name, const std::string &path);
+            Result<void> set_task_path(const std::string &task_id, const std::string &path);
+            Result<void> delete_task_path(const std::string &task_id, const std::string &path);
 
-            Result<void> set_task_command(const std::string &task_name, const std::string &command);
-            Result<void> delete_task_command(const std::string &task_name, const std::string &command);
+            Result<void> set_task_command(const std::string &task_id, const std::string &command);
+            Result<void> delete_task_command(const std::string &task_id, const std::string &command);
 
-            Result<void> set_task_on_success(const std::string &task_name, const std::string &command);
-            Result<void> delete_task_on_success(const std::string &task_name, const std::string &command);
-            Result<void> set_task_on_failure(const std::string &task_name, const std::string &command);
-            Result<void> delete_task_on_failure(const std::string &task_name, const std::string &command);
+            Result<void> set_task_on_success(const std::string &task_id, const std::string &command);
+            Result<void> delete_task_on_success(const std::string &task_id, const std::string &command);
+            Result<void> set_task_on_failure(const std::string &task_id, const std::string &command);
+            Result<void> delete_task_on_failure(const std::string &task_id, const std::string &command);
 
-            Result<void> set_ignored_path(const std::string &task_name, const std::string &path);
-            Result<void> set_ignored_pattern(const std::string &task_name, const std::string &pattern);
+            Result<void> set_ignored_path(const std::string &task_id, const std::string &path);
+            Result<void> set_ignored_pattern(const std::string &task_id, const std::string &pattern);
 
             Result<void> start_all();
             Result<void> stop_all();
 
-            Result<void> activate_task(const std::string &task_name);
-            Result<void> deactivate_task(const std::string &task_name);
+            Result<void> activate_task(const std::string &task_id);
+            Result<void> deactivate_task(const std::string &task_id);
 
             Result<void> start_active();
             Result<void> stop_active();
