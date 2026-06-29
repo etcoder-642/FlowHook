@@ -59,5 +59,6 @@ namespace flowhook {
             Result<void> delete_task(const Task &task);
 
             std::vector<Task> get_tasks() const;
+            Result<std::vector<std::string>> get_watch_list(const std::string &task_id);
     };
 }

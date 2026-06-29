@@ -479,4 +479,15 @@ namespace flowhook {
         }
         return tasks;
     }
+
+    Result<vector<string>> FlowHookCore::get_watch_list(const std::string &task_id)
+    {
+        vector<string> watched_paths;
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            if((*it)->get_task_id() == task_id)
+                watched_paths = TRY((*it)->get_watch_list(), vector<string>);
+        }
+        return Result<vector<string>>::Ok(watched_paths);
+    }
 }

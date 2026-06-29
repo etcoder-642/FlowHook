@@ -448,6 +448,11 @@ namespace flowhook
         return Result<void>::Ok();
     }
 
+    Result<vector<string>> TaskRunner::get_watch_list()
+    {
+        return fw->get_watch_list();
+    }
+
     Result<void> TaskRunner::stop()
     {
         if(!task.isRunning)

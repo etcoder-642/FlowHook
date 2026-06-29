@@ -62,6 +62,8 @@ namespace flowhook
         Result<void> add_callback(const WatchCallback &callback);
         Result<void> delete_callback(const WatchCallback &callback);
 
+        Result<std::vector<std::string>> get_watch_list();
+
         Result<void> execute(const WatchEvent &e);
         Result<void> start();
         Result<void> stop();
