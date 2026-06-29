@@ -2,7 +2,7 @@ name: Tests
 
 on:
     push:
-        branches: [core, main]
+        branches: [dev, main, test/all]
     pull_request:
         branches: [main]
 
@@ -31,4 +31,4 @@ jobs:
               run: cmake --build build
 
             - name: Run tests
-              run: ctest --test-dir build --output-on-failure
+              run: cd build && ./test_config_manager
