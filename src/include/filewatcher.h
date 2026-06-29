@@ -39,6 +39,9 @@ namespace flowhook
         std::atomic<bool> isWatching{false};
         std::thread background_thread;
 
+        int watched_count = 0;
+        int ignored_count = 0;
+
         Result<WatchEvent> handle_events(int fd, std::vector<int> wd, int argc);
         Result<void> event_loop(int timeout);
 

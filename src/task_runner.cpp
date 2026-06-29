@@ -24,32 +24,40 @@ namespace flowhook
 
     Result<void> TaskRunner::init(const string &task_name, const string &working_directory)
     {
+        FW_LOG("[DEBUG] Initializing task runner for " + task_name + " in " + working_directory + " ...✗");
         fw = TRY(FileWatcher::create(), void);
         task.name = task_name;
         task.id = working_directory;
         flushed = false;
         task.isRunning = false;
 
-        sl = new SessionLogger();
-        if (!sl)
+        if(!fs::exists(working_directory))
         {
             return Result<void>::Err(FWError::make(
-                ErrorCode::SYS_ALLOC_FAILED, "Error: allocating memory for session logger"));
+                ErrorCode::PATH_NOT_FOUND, "Error: working directory does not exist " + working_directory + ". ✗"));
         }
-        TEST(sl->start(working_directory));
+
+        string file_name = task_name + ".log";
+        fs::path _file_path = fs::path(working_directory) / file_name;
+        sl = TRY(SessionLogger::create(_file_path.string()), void);
+
+        FW_LOG("[FLOWHOOK] Adding path " << _file_path << " to session logger...");
 
         last_executed = std::chrono::steady_clock::now() - std::chrono::milliseconds(500);
+        FW_LOG("[DEBUG] Task runner initialized. ✓");
         return Result<void>::Ok();
     }
 
     TaskRunner::~TaskRunner()
     {
+
         if(fw)
             fw->stop();
         delete fw;
-        sl->stop();
+        if(sl) sl->stop();
         delete sl;
         task.isRunning = false;
+        FW_LOG("[DEBUG] TaskRunner destoryed.");
     }
 
     Result<void> TaskRunner::set_depth(int num)
@@ -57,12 +65,12 @@ namespace flowhook
         if(num > 6)
         {
             return Result<void>::Err(
-                FWError::make(ErrorCode::INVALID_DEPTH, "Error: invalid depth set - depth too much")
+                FWError::make(ErrorCode::INVALID_DEPTH, "Error: invalid depth set - depth too much ✗")
             );
         } else if( num < 1)
         {
             return Result<void>::Err(
-                FWError::make(ErrorCode::INVALID_DEPTH, "Error: invalid depth set - depth set too low")
+                FWError::make(ErrorCode::INVALID_DEPTH, "Error: invalid depth set - depth set too low ✗")
             );
         }
 
@@ -76,16 +84,17 @@ namespace flowhook
         if(task_name.empty())
         {
             return Result<void>::Err(FWError::make(
-                ErrorCode::EMPTY_VALUE, "Error: task name is empty"
+                ErrorCode::EMPTY_VALUE, "Error: task name is empty ✗"
             ));
         }
         // check if task name already exists
         if(task.name == task_name)
         {
             return Result<void>::Err(FWError::make(
-                ErrorCode::TASK_ALREADY_EXISTS, "Error: task name already exists"));
+                ErrorCode::TASK_ALREADY_EXISTS, "Error: task name already exists ✗"));
         }
         task.name = task_name;
+        FW_LOG("[DEBUG] Changing task name successful. ✓");
         return Result<void>::Ok();
     }
 
@@ -95,23 +104,24 @@ namespace flowhook
         if(working_directory.empty())
         {
             return Result<void>::Err(FWError::make(
-                ErrorCode::EMPTY_VALUE, "Error: working directory is empty"
+                ErrorCode::EMPTY_VALUE, "Error: working directory is empty ✗"
             ));
         }
         // check if working directory is a valid path
         if(!fs::exists(working_directory))
         {
             return Result<void>::Err(FWError::make(
-                ErrorCode::PATH_NOT_FOUND, "Error: working directory not found"
+                ErrorCode::PATH_NOT_FOUND, "Error: working directory not found ✗"
             ));
         }
         // check if working directory already exists
         if(task.id == working_directory)
         {
             return Result<void>::Err(FWError::make(
-                ErrorCode::PATH_ALREADY_EXISTS, "Error: working directory already exists"));
+                ErrorCode::PATH_ALREADY_EXISTS, "Error: working directory already exists ✗"));
         }
         task.id = working_directory;
+        FW_LOG("[DEBUG] Working directory changed successfully. ✓");
         return Result<void>::Ok();
     }
 
@@ -132,6 +142,7 @@ namespace flowhook
         }
         task.ignored_paths.push_back(path);
         fw->add_ignored_path(path);
+        FW_LOG("[DEBUG] Adding ignored path " + path + " to Task and filewatcher completed. ✓");
         return Result<void>::Ok();
     }
 
@@ -152,6 +163,7 @@ namespace flowhook
         }
         task.ignored_patterns.push_back(pattern);
         fw->add_ignored_pattern(pattern);
+        FW_LOG("[DEBUG] Adding ignored pattern " + pattern + " to Task and filewatcher completed. ✓");
         return Result<void>::Ok();
     }
 
@@ -170,7 +182,7 @@ namespace flowhook
             if(cmd == command)
             {
                 return Result<void>::Err(FWError::make(
-                    ErrorCode::COMMAND_ALREADY_EXISTS, "Error: command already exists"));
+                    ErrorCode::COMMAND_ALREADY_EXISTS, "Error: command already exists ✗"));
             }
         }
 
@@ -290,29 +302,27 @@ namespace flowhook
         if (now - last_executed < cooldown_ms)
             return Result<void>::Ok(); // silently skip
 
-        FW_LOG("[DEBUG] execute called");
+        FW_LOG("[DEBUG] Starting command execution pipeline ...");
         // check if event is null
         if(e.isNull())
         {
-            FW_LOG("[FLOWHOOK] - event is null.");
-            return Result<void>::Err(FWError::make(ErrorCode::EVENT_NOT_FOUND, "Error: event is null"));
+            return Result<void>::Err(FWError::make(ErrorCode::EVENT_NOT_FOUND, "Error: event is null ✗"));
         }
 
         // check if task commands are empty
         if (task.commands.empty())
         {
-            FW_LOG("[FLOWHOOK] - command is empty.");
-            return Result<void>::Err(FWError::make(ErrorCode::COMMAND_EMPTY, "Error: no commands to execute"));
+            return Result<void>::Err(FWError::make(ErrorCode::COMMAND_EMPTY, "Error: no commands to execute ✗"));
         }
 
         for (auto &cmd : task.commands)
         {
-            FW_LOG("[FLOWHOOK] - executing command through pipes ....");
+            FW_LOG("[DEBUG] Executing command through pipes ....");
             string secure_execution_chain = "cd " + task.id + " && timeout 15s " + cmd + " 2>&1";
             FILE *fp = popen(secure_execution_chain.c_str(), "r");
             if (fp == NULL)
             {
-                return Result<void>::Err(FWError::make(ErrorCode::SYS_PIPE_FAILED, "Error: popen failure"));
+                return Result<void>::Err(FWError::make(ErrorCode::SYS_PIPE_FAILED, "Error: popen failure ✗"));
             }
 
             char buffer[128];
@@ -336,7 +346,7 @@ namespace flowhook
             if(ferror(fp))
             {
                 return Result<void>::Err(FWError::make(
-                    ErrorCode::SYS_IO_FAILED, "Error: reading from pipe failed"));
+                    ErrorCode::SYS_IO_FAILED, "Error: reading from pipe failed ✗"));
             }
 
             int status = pclose(fp);
@@ -353,7 +363,7 @@ namespace flowhook
             {
                 for(auto &cmd_i : task.on_failure)
                 {
-                    FW_LOG("[FLOWHOOK] - failure command executing...");
+                    FW_LOG("[DEBUG] Executing failure commands...");
                     string exec_chain = "cd " + task.id + " && timeout 15s " + cmd_i;
                     system(exec_chain.c_str());
                 }
@@ -362,7 +372,7 @@ namespace flowhook
             {
                 for(auto &cmd_i : task.on_success)
                 {
-                    FW_LOG("[FLOWHOOK] - success command executing...");
+                    FW_LOG("[DEBUG] Executing success commands...");
                     string exec_chain = "cd " + task.id + " && timeout 15s " + cmd_i;
                     system(exec_chain.c_str());
                 }
@@ -373,6 +383,7 @@ namespace flowhook
             execution_id++;
         }
         last_executed = chrono::steady_clock::now();
+        FW_LOG("[DEBUG] Command Execution pipeline finalized. ✓");
         return Result<void>::Ok();
     }
 
@@ -382,7 +393,7 @@ namespace flowhook
         if(callback.isNull())
         {
             return Result<void>::Err(FWError::make(
-                ErrorCode::EMPTY_VALUE, "Error: callback is empty"));
+                ErrorCode::EMPTY_VALUE, "Error: callback is empty ✓"));
         }
         // check if callback already exists
         for(auto &cb : callbacks)
@@ -390,7 +401,7 @@ namespace flowhook
             if(cb == callback)
             {
                 return Result<void>::Err(FWError::make(
-                    ErrorCode::CALLBACK_ALREADY_EXISTS, "Error: callback already exists"));
+                    ErrorCode::CALLBACK_ALREADY_EXISTS, "Error: callback already exists ✓"));
             }
         }
         //
@@ -414,22 +425,16 @@ namespace flowhook
 
     Result<void> TaskRunner::start()
     {
-        FW_LOG("[FLOWHOOK] - task_runner started...");
+        FW_LOG("[DEBUG] Starting TaskRunner...");
         if(task.isRunning)
         {
             return Result<void>::Err(FWError::make(ErrorCode::TASK_ALREADY_RUNNING, "Error: task runner already running"));
         }
-
-        string _file_path = task.id;
-        FW_LOG("[FLOWHOOK] - adding path " << _file_path << " to session logger...");
-        sl->start(_file_path);
-
-
         task.isRunning = true;
 
         WatchCallback callback = {this, &TaskRunner::execute};
         TEST(add_callback(callback));
-        FW_LOG("[FLOWHOOK]  - linking callback with events...");
+        FW_LOG("[DEBUG]  Linking callbacks with events...");
         for(auto &cb : callbacks)
         {
             TEST(fw->link_event(IN_CLOSE_WRITE, cb));
@@ -437,8 +442,8 @@ namespace flowhook
             TEST(fw->link_event(IN_MOVED_FROM, cb));
         }
 
+        TEST(sl->start());
 
-        FW_LOG("[FLOWHOOK] - starting filewatcher...");
         TEST(fw->start(100));
         return Result<void>::Ok();
     }
@@ -447,7 +452,7 @@ namespace flowhook
     {
         if(!task.isRunning)
         {
-            return Result<void>::Err(ErrorCode::TASK_NOT_RUNNING, "Error: task watcher not running");
+            return Result<void>::Ok();
         }
 
         int count = 0;

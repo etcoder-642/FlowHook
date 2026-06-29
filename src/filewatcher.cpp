@@ -12,17 +12,18 @@
 
 #include <cstring>
 
+#include <fnmatch.h>
 #include <mutex>
 #include <thread>
-#include <fnmatch.h>
 
-#include "include/filewatcher.h"
+#include "error/error.h"
 #include "error/result.h"
+#include "include/filewatcher.h"
 #include "include/macros.hpp"
 
-using namespace flowhook;
 using namespace std;
 namespace fs = std::filesystem;
+namespace flowhook {
 
 Result<FileWatcher *> FileWatcher::create() {
   FileWatcher *fw = new FileWatcher();
@@ -31,14 +32,16 @@ Result<FileWatcher *> FileWatcher::create() {
 }
 
 Result<void> FileWatcher::init() {
+  FW_LOG("[DEBUG] Initializing FileWatcher...");
   inotify_fd = inotify_init1(IN_NONBLOCK);
   if (inotify_fd == -1) {
     return Result<void>::Err(FWError::make(ErrorCode::SYS_IO_FAILED,
-                                           "Error: inotify_init1 failure"));
+                                           "Error: inotify_init1 failure. ✗"));
   }
   nfds = 1;
   fd[0].fd = inotify_fd;
   fd[0].events = POLLIN;
+  FW_LOG("[DEBUG] FileWatcher initialized successfully. ✓");
   return Result<void>::Ok();
 }
 
@@ -67,19 +70,19 @@ Result<WatchEvent> FileWatcher::handle_events(int fd, vector<int> wd,
       event = reinterpret_cast<const struct inotify_event *>(ptr);
 
       if (event->mask & IN_CLOSE_WRITE) {
-        FW_LOG("[FLOWHOOK] - EVENT detected - IN_CLOSE_WRITE");
+        FW_LOG("[DEBUG] - EVENT detected - IN_CLOSE_WRITE");
         e.event_mask = IN_CLOSE_WRITE;
       } else if (event->mask & IN_MODIFY) {
-        FW_LOG("[FLOWHOOK] - EVENT detected - IN_MODIFY");
+        FW_LOG("[DEBUG] - EVENT detected - IN_MODIFY");
         e.event_mask = IN_MODIFY;
       } else if (event->mask & IN_MOVED_TO) {
-        FW_LOG("[FLOWHOOK] - EVENT detected - IN_MOVED_TO");
+        FW_LOG("[DEBUG] - EVENT detected - IN_MOVED_TO");
         e.event_mask = IN_MOVED_TO;
       } else if (event->mask & IN_MOVED_FROM) {
-        FW_LOG("[FLOWHOOK] - EVENT detected - IN_MOVED_FROM");
+        FW_LOG("[DEBUG] - EVENT detected - IN_MOVED_FROM");
         e.event_mask = IN_MOVED_FROM;
       } else {
-        FW_LOG("[FLOWHOOK] - EVENT detected " << event->mask);
+        FW_LOG("[DEBUG] - EVENT detected - EVENT_MASK: " << event->mask);
       }
 
       string base_path = watch_registry[event->wd];
@@ -102,110 +105,143 @@ Result<WatchEvent> FileWatcher::handle_events(int fd, vector<int> wd,
     }
   }
   return Result<WatchEvent>::Err(ErrorCode::EVENT_NOT_FOUND,
-                                 "Error: empty event");
+                                 "Error: empty event. ✗");
 }
 
-Result<void> FileWatcher::add_ignored_path(const string &path)
-{
-    lock_guard<mutex> lock(registry_mutex);
-    ignored_paths.push_back(path);
+Result<void> FileWatcher::add_ignored_path(const string &path) {
+  lock_guard<mutex> lock(registry_mutex);
+  ignored_paths.push_back(path);
 
-    vector<string> to_remove = {};
-    for(auto [wd, watched_path]: watch_registry)
-    {
-        if(isIgnored(watched_path))
-            to_remove.push_back(watched_path);
-    }
-    for(auto p: to_remove)
-       TEST(remove_path_internal(p));
+  vector<string> to_remove = {};
+  for (auto [wd, watched_path] : watch_registry) {
+    if (isIgnored(watched_path))
+      to_remove.push_back(watched_path);
+  }
+  for (auto p : to_remove)
+    TEST(remove_path_internal(p));
 
-    return Result<void>::Ok();
+  return Result<void>::Ok();
 }
 
-Result<void> FileWatcher::add_ignored_pattern(const string &pattern)
-{
-    lock_guard<mutex> lock(registry_mutex);
-    ignored_patterns.push_back(pattern);
-    vector<string> to_remove = {};
-    for(auto [wd, watched_path]: watch_registry)
-    {
-        if(isIgnored(watched_path))
-            to_remove.push_back(watched_path);
-    }
-    for(auto p: to_remove)
-       TEST(remove_path_internal(p));
+Result<void> FileWatcher::add_ignored_pattern(const string &pattern) {
+  lock_guard<mutex> lock(registry_mutex);
+  ignored_patterns.push_back(pattern);
+  vector<string> to_remove = {};
+  for (auto [wd, watched_path] : watch_registry) {
+    if (isIgnored(watched_path))
+      to_remove.push_back(watched_path);
+  }
+  for (auto p : to_remove)
+    TEST(remove_path_internal(p));
 
-    return Result<void>::Ok();
+  return Result<void>::Ok();
 }
 
-bool FileWatcher::isIgnored(const string &path)
-{
-    for(auto &p: ignored_paths)
-    {
-        if(p == path) return true;
-    }
+bool FileWatcher::isIgnored(const string &path) {
+    ignored_count++;
+  for (auto &p : ignored_paths) {
+    if (p == path)
+      return true;
+  }
 
-    string filename = fs::path(path).filename().string();
-    for(auto &p: ignored_patterns)
-    {
-        if(fnmatch(p.c_str(), filename.c_str(), 0) == 0) return true;
-    }
+  string filename = fs::path(path).filename().string();
+  for (auto &p : ignored_patterns) {
+    if (fnmatch(p.c_str(), filename.c_str(), 0) == 0)
+      return true;
+  }
 
-    return false;
+  return false;
 }
 
 Result<void> FileWatcher::add_path(const string &arg, int depth) {
   lock_guard<mutex> lock(registry_mutex);
   TEST(add_path_internal(arg, depth, 0));
+  FW_VERBOSE("[FLOWHOOK] " + to_string(watched_count) + " files added to filewatcher.");
+  FW_VERBOSE("[FLOWHOOK] " + to_string(ignored_count) + " files ignored.");
   return Result<void>::Ok();
 }
 
-Result<void> FileWatcher::add_path_internal(const string &arg, int MAX_DEPTH, int CURRENT_DEPTH)
-{
-    // if path is directory add each files inside it iteratively
-    if (fs::is_directory(arg)) {
-      for (auto &entry : fs::directory_iterator(arg)) {
-          if(entry.is_regular_file()){
-              if(isIgnored(entry.path().string())) continue;
-
-              int wd = inotify_add_watch(inotify_fd, entry.path().c_str(),
-                                         IN_MOVED_TO | IN_MOVED_FROM | IN_MODIFY |
-                                             IN_CLOSE_WRITE);
-              if (wd == -1)
-                return Result<void>::Err(FWError::make(
-                    ErrorCode::SYS_IO_FAILED, "Error: inotify_add_watch failure"));
-              watch_registry[wd] = entry.path();
-              r_watch_registry[entry.path()] = wd;
-          } else if(entry.is_directory() && MAX_DEPTH > CURRENT_DEPTH) {
-              TEST(add_path_internal(entry.path(), MAX_DEPTH, CURRENT_DEPTH + 1));
-          }
-      }
+Result<void> FileWatcher::add_path_internal(const string &arg, int MAX_DEPTH,
+                                            int CURRENT_DEPTH) {
+  // if path is directory add each files inside it iteratively
+  if (isIgnored(arg)){
+      FW_LOG("[DEBUG] Path " + arg + " matches ignored paths and patterns.");
+      FW_LOG("[DEBUG] Adding Path " + arg + " to filewatcher failed. ✗");
       return Result<void>::Ok();
-    }
-    FW_LOG("[DEBUG] inotify_add_watch on: " << arg);
-    // check if path already exists
-    for (auto [w, p] : watch_registry) {
-      if (arg == p) {
-        return Result<void>::Err(FWError::make(ErrorCode::PATH_ALREADY_EXISTS,
-                                               "Error: Path already exists"));
+  }
+
+  if (fs::is_directory(arg)) {
+
+    FW_LOG("[DEBUG] Path " + arg +
+           " is a directory adding child files recursively...");
+    for (auto &entry : fs::directory_iterator(arg)) {
+      if (entry.is_regular_file()) {
+        FW_LOG("[DEBUG] Adding path " + entry.path().string() +
+               " to filewatcher...");
+        FW_LOG("[DEBUG] Checking if Path " + entry.path().string() +
+            " matches ignored paths and patterns ...");
+
+        if (isIgnored(entry.path().string())){
+            FW_LOG("[DEBUG] Path " + entry.path().string() + " matches ignored patterns.");
+            FW_LOG("[DEBUG] Adding Path " + entry.path().string() + " to filewatcher failed. ✗");
+            continue;
+        }
+
+        int wd = inotify_add_watch(inotify_fd, entry.path().c_str(),
+                                   IN_MOVED_TO | IN_MOVED_FROM | IN_MODIFY |
+                                       IN_CLOSE_WRITE);
+        watched_count++;
+        if (wd == -1)
+          return Result<void>::Err(FWError::make(
+              ErrorCode::SYS_IO_FAILED, "Error: inotify_add_watch failure on path " + entry.path().string() + " ✗"));
+        watch_registry[wd] = entry.path();
+        r_watch_registry[entry.path()] = wd;
+        FW_LOG("[DEBUG] Adding path " + entry.path().string() +
+               " to filewatcher completed. ✓");
+      } else if (entry.is_directory()) {
+          if(MAX_DEPTH > CURRENT_DEPTH)
+              TEST(add_path_internal(entry.path(), MAX_DEPTH, CURRENT_DEPTH + 1));
+          else
+              FW_LOG("[DEBUG] Path " + entry.path().string() + " is a directory. But MAX_DEPTH=" +
+                  to_string(MAX_DEPTH) + " have been reached. Child files won't be watched.");
+      } else if(!fs::is_directory(arg)) {
+        FW_LOG("[DEBUG] Path " + arg + " is a file. Adding to filewatcher...");
+        int wd = inotify_add_watch(inotify_fd, arg.c_str(),
+                                   IN_MOVED_TO | IN_MOVED_FROM | IN_MODIFY |
+                                       IN_CLOSE_WRITE);
+        watched_count++;
+        if (wd == -1)
+          return Result<void>::Err(FWError::make(
+              ErrorCode::SYS_IO_FAILED, "Error: inotify_add_watch failure on path " + arg + " ✗"));
+        watch_registry[wd] = arg;
+        r_watch_registry[arg] = wd;
       }
     }
-    // check if path is empty
-    if (arg.empty()) {
-      return Result<void>::Err(
-          FWError::make(ErrorCode::EMPTY_VALUE, "Error: path is empty"));
-    }
-
-    // add path to inotify
-    int wd = inotify_add_watch(inotify_fd, arg.c_str(),
-                               IN_MOVED_TO | IN_MOVED_FROM | IN_MODIFY |
-                                   IN_CLOSE_WRITE);
-    if (wd == -1)
-      return Result<void>::Err(FWError::make(ErrorCode::SYS_IO_FAILED,
-                                             "Error: inotify_add_watch failure"));
-    watch_registry[wd] = arg;
-    r_watch_registry[arg] = wd;
     return Result<void>::Ok();
+  }
+  // check if path already exists
+  for (auto [w, p] : watch_registry) {
+    if (arg == p) {
+      return Result<void>::Err(FWError::make(ErrorCode::PATH_ALREADY_EXISTS,
+                                             "Error: Path already exists ✗"));
+    }
+  }
+  // check if path is empty
+  if (arg.empty()) {
+    return Result<void>::Err(
+        FWError::make(ErrorCode::EMPTY_VALUE, "Error: path is empty ✗"));
+  }
+
+  // add path to inotify
+  int wd = inotify_add_watch(inotify_fd, arg.c_str(),
+                             IN_MOVED_TO | IN_MOVED_FROM | IN_MODIFY |
+                                 IN_CLOSE_WRITE);
+  if (wd == -1)
+    return Result<void>::Err(FWError::make(
+        ErrorCode::SYS_IO_FAILED, "Error: inotify_add_watch failure ✗"));
+  watch_registry[wd] = arg;
+  r_watch_registry[arg] = wd;
+  return Result<void>::Ok();
 }
 
 Result<void> FileWatcher::remove_path(const string &arg) {
@@ -213,35 +249,38 @@ Result<void> FileWatcher::remove_path(const string &arg) {
   return remove_path_internal(arg);
 }
 
-Result<void> FileWatcher::remove_path_internal(const string &arg)
-{
-    // check if path exists
-    bool path_exists = false;
-    for (auto [w, p] : watch_registry) {
-      if (arg == p) {
-        path_exists = true;
-      }
+Result<void> FileWatcher::remove_path_internal(const string &arg) {
+  // check if path exists
+  bool path_exists = false;
+  for (auto [w, p] : watch_registry) {
+    if (arg == p) {
+      path_exists = true;
     }
-    if (!path_exists) {
-      return Result<void>::Err(
-          FWError::make(ErrorCode::PATH_NOT_FOUND, "Error: Path not found"));
-    }
+  }
+  if (!path_exists) {
+    return Result<void>::Err(
+        FWError::make(ErrorCode::PATH_NOT_FOUND, "Error: Path not found"));
+  }
 
-    // remove path from inotify
-    int _r_wd = r_watch_registry[arg];
-    inotify_rm_watch(inotify_fd, _r_wd);
-    watch_registry.erase(_r_wd);
-    r_watch_registry.erase(arg);
-    return Result<void>::Ok();
+  // remove path from inotify
+  int _r_wd = r_watch_registry[arg];
+  inotify_rm_watch(inotify_fd, _r_wd);
+  watch_registry.erase(_r_wd);
+  r_watch_registry.erase(arg);
+  return Result<void>::Ok();
 }
 
 Result<void> FileWatcher::link_event(uint32_t event_mask,
                                      WatchCallback callback) {
   lock_guard<mutex> lock(registry_mutex);
+
+  FW_LOG("[DEBUG] Linking event: event_mask = " + to_string(event_mask) +
+         " to callback ...");
   if (event_mask != IN_MODIFY && event_mask != IN_CLOSE_WRITE &&
       event_mask != IN_MOVED_TO && event_mask != IN_MOVED_FROM) {
     return Result<void>::Err(
-        FWError::make(ErrorCode::EVENT_NOT_SUPPORTED, "Error: no such event"));
+        FWError::make(ErrorCode::EVENT_NOT_SUPPORTED,
+                      "Error: no such event " + to_string(event_mask) + ". ✗"));
   }
 
   // check if callback already exists
@@ -250,10 +289,12 @@ Result<void> FileWatcher::link_event(uint32_t event_mask,
     if (cb == callback) {
       return Result<void>::Err(
           FWError::make(ErrorCode::DUPLICATE_ENTRY,
-                        "Error: event already linked with callback"));
+                        "Error: event already linked with callback. ✗"));
     }
   }
   event_callbacks[event_mask].push_back(callback);
+  FW_LOG("[DEBUG] Event linked: event_mask = " + to_string(event_mask) +
+         " to callback. ✓");
   return Result<void>::Ok();
 }
 
@@ -261,24 +302,27 @@ Result<void> FileWatcher::unlink_event(uint32_t event_mask,
                                        WatchCallback callback) {
   if (event_callbacks.find(event_mask) == event_callbacks.end()) {
     return Result<void>::Err(
-        FWError::make(ErrorCode::EVENT_NOT_FOUND, "Error: no such event"));
+        FWError::make(ErrorCode::EVENT_NOT_FOUND, "Error: no such event. ✗"));
   }
 
   for (auto it = event_callbacks[event_mask].begin();
        it != event_callbacks[event_mask].end(); it++) {
     if (*it == callback) {
       event_callbacks[event_mask].erase(it);
+      FW_LOG("[DEBUG] Event unlinked: event_mask = " +
+             to_string(event_mask) + " from callback. ✓");
       return Result<void>::Ok();
     }
   }
   return Result<void>::Err(FWError::make(ErrorCode::CALLBACK_NOT_FOUND,
-                                         "Error: callback not found"));
+                                         "Error: callback not found. ✗"));
 }
 
 Result<void> FileWatcher::event_loop(int timeout) {
   auto last_event_time = std::chrono::steady_clock::now();
   const auto debounce_ms = std::chrono::milliseconds(300);
 
+  FW_LOG("[DEBUG] Event loop started. ✓");
   while (isWatching) {
     poll_num = poll(fd, nfds, timeout);
 
@@ -286,8 +330,8 @@ Result<void> FileWatcher::event_loop(int timeout) {
       if (errno == EINTR)
         continue;
       else {
-        return Result<void>::Err(
-            FWError::make(ErrorCode::SYS_POLL_FAILED, "Error: polling error"));
+        return Result<void>::Err(FWError::make(ErrorCode::SYS_POLL_FAILED,
+                                               "Error: polling error. ✗"));
       }
     }
 
@@ -300,7 +344,7 @@ Result<void> FileWatcher::event_loop(int timeout) {
         continue;
       last_event_time = now;
 
-      FW_LOG("[DEBUG] POLLIN received");
+      FW_LOG("[DEBUG] POLLIN received. ✓");
       WatchEvent e;
       vector<WatchCallback> callback;
       {
@@ -309,13 +353,18 @@ Result<void> FileWatcher::event_loop(int timeout) {
         vector<int> _wd_keys;
         for (const auto &[wd, path] : watch_registry) {
           _wd_keys.push_back(wd);
+          FW_LOG("[DEBUG] Pushing event on path " + path +
+                 " to handle_events. ✓");
         }
         e = TRY(handle_events(fd[0].fd, _wd_keys, watch_registry.size()), void);
         callback = event_callbacks[e.event_mask];
       }
       if (!callback.empty()) {
         for (auto &cb : callback) {
+          FW_LOG("[DEBUG] Invoking callback for event " +
+                 to_string(e.event_mask) + " ...");
           TEST(cb.invoke(e));
+          FW_LOG("[DEBUG] Callback executed. ✓");
         }
       }
     }
@@ -324,7 +373,7 @@ Result<void> FileWatcher::event_loop(int timeout) {
 }
 
 Result<void> FileWatcher::start(int timeout) {
-  FW_LOG("[FLOWHOOK] - filewatcher started...");
+  FW_LOG("[DEBUG] Starting file watcher...");
   if (timeout < 10) {
     timeout = 10;
   }
@@ -332,31 +381,37 @@ Result<void> FileWatcher::start(int timeout) {
   if (isWatching) {
     return Result<void>::Err(
         FWError::make(ErrorCode::FILEWATCHER_ALREADY_RUNNING,
-                      "Error: file watcher already running"));
+                      "Error: File watcher already running. ✗"));
   }
   try {
-    FW_LOG("[FLOWHOOK] - launching a background thread to watch files ..."
-        );
+    FW_LOG("[DEBUG] Launching a background thread to watch files ...");
     isWatching = true;
     background_thread = std::thread(&FileWatcher::event_loop, this, timeout);
   } catch (std::system_error &e) {
 
     return Result<void>::Err(
         FWError::make(ErrorCode::SYS_THREAD_FAILED,
-                      "Error: starting background thread failed"));
+                      "Error: Starting background thread failed. ✗"));
   }
+  FW_LOG("[DEBUG] Background thread launched successfully. ✓");
+  FW_LOG("[DEBUG] File watcher started successfully. ✓");
   return Result<void>::Ok();
 }
 
 Result<void> FileWatcher::stop() {
   if (!isWatching) {
-    return Result<void>::Err(FWError::make(ErrorCode::FILEWATCHER_NOT_RUNNING,
-                                           "Error: file watcher not running"));
+    return Result<void>::Err(
+        FWError::make(ErrorCode::FILEWATCHER_NOT_RUNNING,
+                      "Error: File watcher not running. ✗"));
   }
   isWatching = false;
+  FW_LOG("[DEBUG] Stopping file watcher...");
+  FW_LOG("[DEBUG] Joining background thread...");
   if (background_thread.joinable()) {
     background_thread.join();
   }
+  FW_LOG("[DEBUG] Background thread joined. ✓");
+  FW_LOG("[DEBUG] File watcher stopped successfully. ✓");
   return Result<void>::Ok();
 }
 
@@ -368,3 +423,4 @@ Result<vector<string>> FileWatcher::get_watch_list() {
   }
   return Result<vector<string>>::Ok(list);
 }
+} // namespace flowhook

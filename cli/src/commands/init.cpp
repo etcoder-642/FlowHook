@@ -14,7 +14,8 @@ namespace flowhook_cli {
 
         // this is a purely ceremonial flag(so that CLI11 won't say there is unrecognized flag)
         // the actual parsing of verbose and setting of the environment variable is done in main.cpp
-        init->add_flag("--verbose", FLOWHOOK_VERBOSE, "Enable verbose output");
+        init->add_flag("--debug", FLOWHOOK_DEBUG, "Enable debug output. \n// is an extremely detailed output that shows every step of the process.");
+        init->add_flag("--verbose", FLOWHOOK_VERBOSE, "Enable verbose output. \n// shows a summary of the process.");
 
 
         static std::string task_name = "";
@@ -38,6 +39,7 @@ namespace flowhook_cli {
             return;
           }
 
+          std::cout << "Initialized flowhook task in " << n_path << std::endl;
         });
     }
 }

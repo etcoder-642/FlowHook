@@ -17,6 +17,7 @@ namespace flowhook {
             std::vector<std::string> default_ignored_patterns;
             std::vector<std::string> default_ignored_paths;
 
+
             FlowHookCore() = default;
 
             bool isValidDir(std::string &path);

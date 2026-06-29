@@ -12,8 +12,8 @@ namespace flowhook_cli {
 
         // this is a purely ceremonial flag(so that CLI11 won't say there is unrecognized flag)
         // the actual parsing of verbose and setting of the environment variable is done in main.cpp
-        run->add_flag("--verbose", FLOWHOOK_VERBOSE, "Enable verbose output");
-
+        run->add_flag("--debug", FLOWHOOK_DEBUG, "Enable debug output. \n// is an extremely detailed output that shows every step of the process.");
+        run->add_flag("--verbose", FLOWHOOK_VERBOSE, "Enable verbose output. \n// shows a summary of the process.");
 
 
         static bool run_all = false;
@@ -30,6 +30,7 @@ namespace flowhook_cli {
               return;
             }
             pause();
+            std::cout << "Watching all tasks..." << std::endl;
             return;
           } else if (!run_task_id.empty()) {
             auto r = fh->start_task(run_task_id);
@@ -39,6 +40,7 @@ namespace flowhook_cli {
               return;
             }
             pause();
+            std::cout << "Watching task on " << run_task_id << "..." << std::endl;
           }
         });
     }

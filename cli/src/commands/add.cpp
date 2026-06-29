@@ -14,7 +14,9 @@ void register_add(CLI::App *app, flowhook::FlowHookCore *fh) {
 
   // this is a purely ceremonial flag(so that CLI11 won't say there is unrecognized flag)
   // the actual parsing of verbose and setting of the environment variable is done in main.cpp
-  add->add_flag("--verbose", FLOWHOOK_VERBOSE, "Enable verbose output");
+  add->add_flag("--debug", FLOWHOOK_DEBUG, "Enable debug output. \n// is an extremely detailed output that shows every step of the process.");
+  add->add_flag("--verbose", FLOWHOOK_VERBOSE, "Enable verbose output. \n// shows a summary of the process.");
+
 
   static std::string task_id = "";
   static std::string add_n_path = "";
@@ -54,6 +56,7 @@ void register_add(CLI::App *app, flowhook::FlowHookCore *fh) {
                   << std::endl;
         return;
       }
+      std::cout << "Task path " << add_n_path << " set successfully." << std::endl;
     }
     if (!add_command.empty()) {
       auto r = fh->set_task_command(task_id, add_command);
@@ -62,6 +65,7 @@ void register_add(CLI::App *app, flowhook::FlowHookCore *fh) {
                   << std::endl;
         return;
       }
+      std::cout << "Task command " << add_command << " set successfully." << std::endl;
     }
     if (!command_on_success.empty()) {
       auto r = fh->set_task_on_success(task_id, command_on_success);
@@ -70,6 +74,7 @@ void register_add(CLI::App *app, flowhook::FlowHookCore *fh) {
                   << std::endl;
         return;
       }
+      std::cout << "Task on success command " << command_on_success << " set successfully." << std::endl;
     }
     if (!command_on_failure.empty()) {
       auto r = fh->set_task_on_failure(task_id, command_on_failure);
@@ -78,6 +83,7 @@ void register_add(CLI::App *app, flowhook::FlowHookCore *fh) {
                   << std::endl;
         return;
       }
+      std::cout << "Task on failure command " << command_on_failure << " set successfully." << std::endl;
     }
     if (!ignored_path.empty()) {
       auto r = fh->set_ignored_path(task_id, ignored_path);
@@ -86,6 +92,7 @@ void register_add(CLI::App *app, flowhook::FlowHookCore *fh) {
                   << std::endl;
         return;
       }
+      std::cout << "Ignored path " << ignored_path << " set successfully." << std::endl;
     }
     if (!ignored_pattern.empty()) {
       auto r = fh->set_ignored_pattern(task_id, ignored_pattern);
@@ -94,6 +101,7 @@ void register_add(CLI::App *app, flowhook::FlowHookCore *fh) {
                   << std::endl;
         return;
       }
+      std::cout << "Ignored pattern " << ignored_pattern << " set successfully." << std::endl;
     }
   });
 }

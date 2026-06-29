@@ -23,6 +23,7 @@ namespace flowhook
         PATH_NOT_FOUND,
         PATH_ALREADY_EXISTS,
         CONFIG_FILE_EMPTY,
+        CONFIG_PARSE_FAILED,
 
         EVENT_NOT_FOUND,
         EVENT_NOT_SUPPORTED,

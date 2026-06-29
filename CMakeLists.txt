@@ -46,7 +46,11 @@ add_executable(test_flowhook_core tests/integration/test_flowhook_core.cpp)
 target_link_libraries(test_flowhook_core PRIVATE flowhook_lib)
 target_include_directories(test_flowhook_core PRIVATE tests)
 
-add_executable(flowhook_cli cli/src/main.cpp)
+add_executable(flowhook_cli cli/src/main.cpp
+                            cli/src/commands/add.cpp
+                            cli/src/commands/run.cpp
+                            cli/src/commands/init.cpp
+                            cli/src/commands/list.cpp)
 target_link_libraries(flowhook_cli PRIVATE flowhook_lib)
 target_include_directories(flowhook_cli PRIVATE cli/src)
 

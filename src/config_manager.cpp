@@ -86,7 +86,14 @@ namespace flowhook
         }
         else
         {
-            file >> config_obj;
+            try {
+                config_obj = json::parse(file);
+            }
+            catch (const json::parse_error& e)
+            {
+                return Result<void>::Err(FWError::make(
+                    ErrorCode::CONFIG_PARSE_FAILED, "Error: parsing config file failed"));
+            }
         }
 
         if (file.fail())
