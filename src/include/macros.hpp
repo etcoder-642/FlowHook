@@ -32,6 +32,8 @@
 
 extern bool FLOWHOOK_DEBUG;
 extern bool FLOWHOOK_VERBOSE;
+extern bool FLOWHOOK_QUIET;
 
 #define FW_LOG(msg) if (FLOWHOOK_DEBUG) std::cout << msg << std::endl
 #define FW_VERBOSE(msg) if (FLOWHOOK_VERBOSE) std::cout << msg << std::endl
+#define LOG_BUILD_OUTPUT(msg) if(!FLOWHOOK_QUIET) std::cout << msg

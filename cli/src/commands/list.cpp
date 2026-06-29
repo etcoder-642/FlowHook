@@ -64,7 +64,7 @@ namespace flowhook_cli {
                 std::cout << "All registered Tasks:\n" << std::endl;
                 for (const auto& task : tasks) {
                     std::cout << "Name: " << task.name << std::endl;
-                    std::cout << "Working Directory: " << task.id << std::endl;
+                    std::cout << "Working Directory: " << task.id << "\n" << std::endl;
                 }
             }
 

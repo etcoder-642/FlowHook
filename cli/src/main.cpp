@@ -20,6 +20,7 @@ namespace fs = std::filesystem;
 using namespace flowhook;
 bool FLOWHOOK_VERBOSE = false;
 bool FLOWHOOK_DEBUG = false;
+bool FLOWHOOK_QUIET = false;
 
 static FlowHookCore* fh = nullptr;
 
@@ -60,15 +61,18 @@ int main(int argc, char **argv) {
     signal(SIGINT, handle_sigint);
 
   for (int i = 1; i < argc; i++)
-        if (std::string(argv[i]) == "--debug")
-        {
-            FLOWHOOK_DEBUG = true;
-            FLOWHOOK_VERBOSE = true;
-        }
-  for (int i = 1; i < argc; i++)
-        if (std::string(argv[i]) == "--verbose")
-            FLOWHOOK_VERBOSE = true;
+  {
+      if (std::string(argv[i]) == "--debug")
+      {
+          FLOWHOOK_DEBUG = true;
+          FLOWHOOK_VERBOSE = true;
+      }
+      if (std::string(argv[i]) == "--verbose")
+          FLOWHOOK_VERBOSE = true;
 
+      if (std::string(argv[i]) == "--quiet")
+          FLOWHOOK_QUIET = true;
+  }
 
   auto _fh = FlowHookCore::create();
   if (_fh.isErr()) {

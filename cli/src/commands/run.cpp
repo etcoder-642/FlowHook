@@ -14,6 +14,7 @@ namespace flowhook_cli {
         // the actual parsing of verbose and setting of the environment variable is done in main.cpp
         run->add_flag("--debug", FLOWHOOK_DEBUG, "Enable debug output. \n// is an extremely detailed output that shows every step of the process.");
         run->add_flag("--verbose", FLOWHOOK_VERBOSE, "Enable verbose output. \n// shows a summary of the process.");
+        run->add_flag("--quiet", FLOWHOOK_QUIET, "Removes build output from terminal");
 
 
         static bool run_all = false;
@@ -39,9 +40,8 @@ namespace flowhook_cli {
                         << std::endl;
               return;
             }
+            std::cout << "Watching " << run_task_id << "  (use --quiet to suppress build output)" << std::endl;          }
             pause();
-            std::cout << "Watching task on " << run_task_id << "..." << std::endl;
-          }
         });
     }
 }

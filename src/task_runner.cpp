@@ -334,6 +334,7 @@ namespace flowhook
             {
                 size_t chunk_size = strlen(buffer);
                 total_bytes += chunk_size;
+                LOG_BUILD_OUTPUT(buffer);
                 if (total_bytes < MAX_LOG_SIZE)
                 {
                     log_output += buffer;
