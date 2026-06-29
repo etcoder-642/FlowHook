@@ -17,13 +17,11 @@ void register_remove(CLI::App *app, flowhook::FlowHookCore *fh) {
   remove->add_flag("--debug", FLOWHOOK_DEBUG, "Enable debug output. \n// is an extremely detailed output that shows every step of the process.");
   remove->add_flag("--verbose", FLOWHOOK_VERBOSE, "Enable verbose output. \n// shows a summary of the process.");
 
-  bool remove_task = false;
-  remove->add_flag("--task", remove_task, "Remove the task itself [optional] \n// if not provided, only a provided element will be removed from the task\n");
 
 
   static std::string task_id = "";
-  static std::string add_n_path = "";
-  remove->add_option("--path", add_n_path, "Path to the task [optional] \n// use to add a new path to be watched.\n");
+  static std::string removed_path = "";
+  remove->add_option("--path", removed_path, "Path to the task [optional] \n// use to add a new path to be watched.\n");
 
   static std::string removed_command = "";
   remove->add_option("--command", removed_command, "Remove an existing command from task [optional] \n// if not provided, the task will not run a command when triggered\n");
@@ -44,7 +42,22 @@ void register_remove(CLI::App *app, flowhook::FlowHookCore *fh) {
     fs::path cwd = fs::current_path();
     task_id = cwd.string();
 
+    bool remove_task = false;
+    if(removed_path.empty() && removed_command.empty() &&
+        command_on_success.empty() && command_on_failure.empty() &&
+        ignored_path.empty() && ignored_pattern.empty()) {
+            remove_task = true;
+    }
+
     if (remove_task) {
+        std::cout << "Are you sure you want to remove the flowhook instance from the current directory?" << std::endl;
+        std::cout << "Type 'yes' to confirm: ";
+        std::string confirmation;
+        std::cin >> confirmation;
+        if (confirmation != "yes") {
+            std::cout << "Removal cancelled." << std::endl;
+            return;
+        }
         auto r = fh->delete_task(task_id);
         if (r.isErr()) {
             std::cerr << "Failed to remove task: " << r.getErrMessage() << std::endl;
@@ -52,23 +65,17 @@ void register_remove(CLI::App *app, flowhook::FlowHookCore *fh) {
         return;
     }
 
-    if (add_n_path.empty() && removed_command.empty() &&
-        command_on_success.empty() && command_on_failure.empty() &&
-        ignored_path.empty() && ignored_pattern.empty()) {
-      std::cerr << "At least one of --path, --command, --on-success, --on-failure, --ignored-path, or --ignored-pattern is required\n"
-                << std::endl;
-      return;
-    }
 
-    if (!add_n_path.empty()) {
-      auto r = fh->delete_task_path(task_id, add_n_path);
+    if (!removed_path.empty()) {
+      auto r = fh->delete_task_path(task_id, removed_path);
       if (r.isErr()) {
         std::cerr << "Failed to removed task path: " << r.getErrMessage()
                   << std::endl;
         return;
       }
-      std::cout << "Task path " << add_n_path << " removed successfully." << std::endl;
+      std::cout << "Task path " << removed_path << " removed successfully." << std::endl;
     }
+
     if (!removed_command.empty()) {
       auto r = fh->delete_task_command(task_id, removed_command);
       if (r.isErr()) {

@@ -136,6 +136,21 @@ namespace flowhook
         {
             _on_failure.push_back(cmd);
         }
+
+        vector<string> _ignored_paths;
+        for (auto &path : json_task.at("ignored_paths"))
+        {
+            _ignored_paths.push_back(path);
+        }
+        _task.ignored_paths = _ignored_paths;
+
+        vector<string> _ignored_patterns;
+        for (auto &pattern : json_task.at("ignored_patterns"))
+        {
+            _ignored_patterns.push_back(pattern);
+        }
+        _task.ignored_patterns = _ignored_patterns;
+
         _task.on_failure = _on_failure;
         _task.isActive = json_task.at("isActive");
         return Result<Task>::Ok(_task);
@@ -267,6 +282,8 @@ namespace flowhook
             _task.paths = it->at("paths");
             _task.on_success = it->at("on_success");
             _task.on_failure = it->at("on_failure");
+            _task.ignored_paths = it->at("ignored_paths");
+            _task.ignored_patterns = it->at("ignored_patterns");
             _task.isActive = it->at("isActive");
             tasks.push_back(_task);
         }

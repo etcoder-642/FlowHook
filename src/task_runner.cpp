@@ -168,7 +168,7 @@ Result<void> TaskRunner::remove_ignored_path(const string &path) {
   for (auto it = task.ignored_paths.begin(); it != task.ignored_paths.end();
        it++) {
     if (*it == path) {
-      task.commands.erase(it);
+      task.ignored_paths.erase(it);
       return Result<void>::Ok();
     }
   }
@@ -181,7 +181,7 @@ Result<void> TaskRunner::remove_ignored_pattern(const string &pattern) {
   for (auto it = task.ignored_patterns.begin();
        it != task.ignored_patterns.end(); it++) {
     if (*it == pattern) {
-      task.commands.erase(it);
+      task.ignored_patterns.erase(it);
       return Result<void>::Ok();
     }
   }

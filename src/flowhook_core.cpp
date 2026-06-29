@@ -204,6 +204,7 @@ namespace flowhook {
             if(id == task_id)
             {
                 TEST((*it)->delete_path(path));
+                config_manager->update_task((*it)->get_task());
                 FW_LOG("[DEBUG] Task path deleted: " + task_id + " ✓");
                 return Result<void>::Ok();
             }
@@ -221,7 +222,7 @@ namespace flowhook {
             {
                 TEST((*it)->add_ignored_path(path));
                 config_manager->update_task((*it)->get_task());
-                FW_LOG("[DEBUG] Task ignored path set: " + task_id + " ✓");
+                FW_LOG("[DEBUG] Task ignore path set: " + task_id + " ✓");
                 return Result<void>::Ok();
             }
         }
@@ -238,7 +239,7 @@ namespace flowhook {
             {
                 TEST((*it)->add_ignored_pattern(pattern));
                 config_manager->update_task((*it)->get_task());
-                FW_LOG("[DEBUG] Task ignored pattern set: " + task_id + " ✓");
+                FW_LOG("[DEBUG] Task ignore pattern set: " + task_id + " ✓");
                 return Result<void>::Ok();
             }
         }
@@ -256,7 +257,7 @@ namespace flowhook {
             {
                 TEST((*it)->remove_ignored_path(path));
                 config_manager->update_task((*it)->get_task());
-                FW_LOG("[DEBUG] Task ignored path set: " + task_id + " ✓");
+                FW_LOG("[DEBUG] Ignored path removed: " + task_id + " ✓");
                 return Result<void>::Ok();
             }
         }
@@ -273,7 +274,7 @@ namespace flowhook {
             {
                 TEST((*it)->remove_ignored_pattern(pattern));
                 config_manager->update_task((*it)->get_task());
-                FW_LOG("[DEBUG] Task ignored pattern set: " + task_id + " ✓");
+                FW_LOG("[DEBUG] Ignored pattern removed: " + task_id + " ✓");
                 return Result<void>::Ok();
             }
         }
