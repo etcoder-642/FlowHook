@@ -25,9 +25,9 @@ namespace flowhook
 
         if (override)
         {
-            return std::filesystem::path(override) / "tasks.json";
+            return std::filesystem::path(override) / "config.json";
         }
-        return std::filesystem::path(home) / ".config" / "flowhook" / "tasks.json";
+        return std::filesystem::path(home) / ".config" / "flowhook" / "config.json";
     }
 
     Result<void> ensure_config_dir()

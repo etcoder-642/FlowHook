@@ -63,7 +63,7 @@ UTEST_F_TEARDOWN(ConfigManagerFixture)
 UTEST_F(ConfigManagerFixture, create)
 {
     ASSERT_NE(utest_fixture->cm, nullptr);
-    EXPECT_TRUE(fs::exists("/tmp/cm_test/tasks.json"));
+    EXPECT_TRUE(fs::exists("/tmp/cm_test/config.json"));
     EXPECT_TRUE(ConfigManagerTest::get_config(utest_fixture->cm)["version"] == FLOWHOOK_VERSION);
 }
 

@@ -38,7 +38,7 @@ Result<void> TaskRunner::init(const string &task_name,
                                        working_directory + ". ✗"));
   }
 
-  string file_name = task_name + ".log";
+  string file_name = task_name + "-flowhook.log";
   fs::path _file_path = fs::path(working_directory) / file_name;
   sl = TRY(SessionLogger::create(_file_path.string()), void);
 

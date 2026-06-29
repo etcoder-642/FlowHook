@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
       if(_fh.getErrCode() == ErrorCode::CONFIG_PARSE_FAILED)
       {
           std::cerr << "Config file is corrupted." << std::endl;
-          fs::path config_path = get_home_directory() / ".config" / "flowhook"/ "tasks.json";
+          fs::path config_path = get_home_directory() / ".config" / "flowhook"/ "config.json";
           std::cout << "Path : " << config_path << std::endl;
           std::cerr << "Options: " << std::endl;
           std::cout << " [1] clear all data and start fresh" << std::endl;
