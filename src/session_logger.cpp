@@ -47,6 +47,11 @@ namespace flowhook
 
     Result<void> SessionLogger::start()
     {
+        if (is_running)
+        {
+            return Result<void>::Ok(); // idempotent
+        }
+
         FW_LOG("[DEBUG] Starting a new log session ...");
         file.open(file_path, ios::out | ios::app);
         if (!file.is_open())
@@ -73,6 +78,11 @@ namespace flowhook
 
     Result<void> SessionLogger::log_execution(const ExecutionResult &execution_result)
     {
+        if(!is_running)
+        {
+            return Result<void>::Err(FWError::make(
+                ErrorCode::SESSION_LOGGER_NOT_RUNNING, "Error: session logger not initialized. ✗"));
+        }
         if (session.empty())
         {
             return Result<void>::Err(FWError::make(
@@ -126,7 +136,7 @@ namespace flowhook
     {
         if (!is_running)
         {
-            return Result<void>::Err(FWError::make(ErrorCode::SESSION_LOGGER_NOT_RUNNING, "Error: session logger not running. ✗"));
+            return Result<void>::Ok(); // idempotent
         }
 
         if (!file.is_open())
