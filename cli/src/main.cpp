@@ -14,6 +14,7 @@ namespace flowhook_cli {
     void register_run(CLI::App*, flowhook::FlowHookCore*);
     void register_init(CLI::App*, flowhook::FlowHookCore*);
     void register_list(CLI::App*, flowhook::FlowHookCore*);
+    void register_remove(CLI::App*, flowhook::FlowHookCore*);
 }
 
 namespace fs = std::filesystem;
@@ -116,6 +117,8 @@ int main(int argc, char **argv) {
   flowhook_cli::register_add(&app, fh);
   flowhook_cli::register_run(&app, fh);
   flowhook_cli::register_list(&app, fh);
+  flowhook_cli::register_remove(&app, fh);
+
 
   CLI11_PARSE(app, argc, argv);
   delete fh;

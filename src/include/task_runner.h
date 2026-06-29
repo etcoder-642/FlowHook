@@ -28,6 +28,7 @@ namespace flowhook
 
         TaskRunner() = default;
         Result<void> init(const std::string &task_name, const std::string &working_directory);
+        Result<void> add_path_internal(const std::string &path, int MAX_DEPTH, int CURRENT_DEPTH);
     public:
         static Result<TaskRunner*> create(const std::string &task_name, const std::string &working_directory);
         ~TaskRunner();
@@ -35,6 +36,8 @@ namespace flowhook
         std::string get_task_name() const { return task.name; }
         std::string get_task_id() const { return task.id; }
         Task get_task() const { return task; }
+
+        bool isIgnored(const std::string &path);
 
         bool is_active() const { return task.isActive; }
         void activate() { task.isActive = true; }
@@ -53,11 +56,13 @@ namespace flowhook
         Result<void> add_on_failure(const std::string &command);
         Result<void> delete_on_failure(const std::string &command);
 
-        Result<void> add_path(const std::string &path);
+        Result<void> add_path(const std::string &path, int MAX_DEPTH = 1);
         Result<void> delete_path(const std::string &path);
 
         Result<void> add_ignored_path(const std::string &path);
         Result<void> add_ignored_pattern(const std::string &pattern);
+        Result<void> remove_ignored_path(const std::string &path);
+        Result<void> remove_ignored_pattern(const std::string &pattern);
 
         Result<void> add_callback(const WatchCallback &callback);
         Result<void> delete_callback(const WatchCallback &callback);

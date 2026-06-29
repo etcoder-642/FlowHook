@@ -27,8 +27,6 @@ namespace flowhook
         std::unordered_map<int, std::string> watch_registry;
         std::unordered_map<std::string, int> r_watch_registry;
 
-        std::vector<std::string> ignored_paths;
-        std::vector<std::string> ignored_patterns;
         struct pollfd fd[1];
         nfds_t nfds;
 
@@ -39,8 +37,6 @@ namespace flowhook
         std::atomic<bool> isWatching{false};
         std::thread background_thread;
 
-        int watched_count = 0;
-        int ignored_count = 0;
 
         Result<WatchEvent> handle_events(int fd, std::vector<int> wd, int argc);
         Result<void> event_loop(int timeout);
@@ -64,13 +60,11 @@ namespace flowhook
         FileWatcher &operator=(const FileWatcher &) = delete;
         bool is_running() const { return isWatching; }
 
-        Result<void> add_path(const std::string &arg, int depth = 1);
+        Result<void> add_path(const std::string &arg);
         Result<void> add_path_internal(const std::string &arg, int MAX_DEPTH, int CURRENT_DEPTH);
         Result<void> remove_path(const std::string &arg);
         Result<void> remove_path_internal(const std::string &arg);
 
-        Result<void> add_ignored_path(const std::string &path);
-        Result<void> add_ignored_pattern(const std::string &pattern);
         bool isIgnored(const std::string &path);
 
         Result<void> start(int timeout);

@@ -44,21 +44,6 @@ namespace flowhook_cli {
                 }
             }
 
-            if (list_paths) {
-                if(ts == nullptr) {
-                    std::cerr << "Error: No flowhook task found for the current directory." << std::endl;
-                    return;
-                }
-
-                std::cout << "Paths:\n" << std::endl;
-                auto r = fh->get_watch_list(list_task_id);
-                if(r.isErr())
-                    std::cerr << r.getErrMessage() << std::endl;
-
-                for(const auto& path : r.unwrap()) {
-                    std::cout << path << std::endl;
-                }
-            }
 
             if (list_tasks) {
                 std::cout << "All registered Tasks:\n" << std::endl;
@@ -68,6 +53,18 @@ namespace flowhook_cli {
                 }
             }
 
+
+            if (list_paths) {
+                if(ts == nullptr) {
+                    std::cerr << "Error: No flowhook task found for the current directory." << std::endl;
+                    return;
+                }
+
+                std::cout << "Paths:\n" << std::endl;
+                for(const auto& path : ts->paths) {
+                    std::cout << path << std::endl;
+                }
+            }
 
             if (list_commands) {
                 if(ts == nullptr) {

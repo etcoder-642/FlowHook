@@ -53,6 +53,7 @@ namespace flowhook
         SYS_ALLOC_FAILED,
 
         EMPTY_VALUE,
+        VALUE_NOT_FOUND,
         INVALID_DEPTH,
 
         UNKNOWN

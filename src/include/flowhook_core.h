@@ -48,6 +48,9 @@ namespace flowhook {
             Result<void> set_ignored_path(const std::string &task_id, const std::string &path);
             Result<void> set_ignored_pattern(const std::string &task_id, const std::string &pattern);
 
+            Result<void> remove_ignored_path(const std::string &task_id, const std::string &path);
+            Result<void> remove_ignored_pattern(const std::string &task_id, const std::string &pattern);
+
             Result<void> start_all();
             Result<void> stop_all();
 
@@ -56,7 +59,6 @@ namespace flowhook {
 
             Result<void> start_active();
             Result<void> stop_active();
-            Result<void> delete_task(const Task &task);
 
             std::vector<Task> get_tasks() const;
             Result<std::vector<std::string>> get_watch_list(const std::string &task_id);

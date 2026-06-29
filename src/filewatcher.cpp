@@ -1,4 +1,3 @@
-#include <filesystem>
 #include <iostream>
 #include <string>
 #include <sys/inotify.h>
@@ -22,7 +21,6 @@
 #include "include/macros.hpp"
 
 using namespace std;
-namespace fs = std::filesystem;
 namespace flowhook {
 
 Result<FileWatcher *> FileWatcher::create() {
@@ -108,141 +106,22 @@ Result<WatchEvent> FileWatcher::handle_events(int fd, vector<int> wd,
                                  "Error: empty event. ✗");
 }
 
-Result<void> FileWatcher::add_ignored_path(const string &path) {
+
+Result<void> FileWatcher::add_path(const string &arg) {
   lock_guard<mutex> lock(registry_mutex);
-  ignored_paths.push_back(path);
-
-  vector<string> to_remove = {};
-  for (auto [wd, watched_path] : watch_registry) {
-    if (isIgnored(watched_path))
-      to_remove.push_back(watched_path);
-  }
-  for (auto p : to_remove)
-    TEST(remove_path_internal(p));
-
-  return Result<void>::Ok();
-}
-
-Result<void> FileWatcher::add_ignored_pattern(const string &pattern) {
-  lock_guard<mutex> lock(registry_mutex);
-  ignored_patterns.push_back(pattern);
-  vector<string> to_remove = {};
-  for (auto [wd, watched_path] : watch_registry) {
-    if (isIgnored(watched_path))
-      to_remove.push_back(watched_path);
-  }
-  for (auto p : to_remove)
-    TEST(remove_path_internal(p));
-
-  return Result<void>::Ok();
-}
-
-bool FileWatcher::isIgnored(const string &path) {
-    ignored_count++;
-  for (auto &p : ignored_paths) {
-    if (p == path)
-      return true;
-  }
-
-  string filename = fs::path(path).filename().string();
-  for (auto &p : ignored_patterns) {
-    if (fnmatch(p.c_str(), filename.c_str(), 0) == 0)
-      return true;
-  }
-
-  return false;
-}
-
-Result<void> FileWatcher::add_path(const string &arg, int depth) {
-  lock_guard<mutex> lock(registry_mutex);
-  TEST(add_path_internal(arg, depth, 0));
-  FW_VERBOSE("[FLOWHOOK] " + to_string(watched_count) + " files added to filewatcher.");
-  FW_VERBOSE("[FLOWHOOK] " + to_string(ignored_count) + " files ignored.");
-  return Result<void>::Ok();
-}
-
-Result<void> FileWatcher::add_path_internal(const string &arg, int MAX_DEPTH,
-                                            int CURRENT_DEPTH) {
-  // if path is directory add each files inside it iteratively
-  if (isIgnored(arg)){
-      FW_LOG("[DEBUG] Path " + arg + " matches ignored paths and patterns.");
-      FW_LOG("[DEBUG] Adding Path " + arg + " to filewatcher failed. ✗");
-      return Result<void>::Ok();
-  }
-
-  if (fs::is_directory(arg)) {
-
-    FW_LOG("[DEBUG] Path " + arg +
-           " is a directory adding child files recursively...");
-    for (auto &entry : fs::directory_iterator(arg)) {
-      if (entry.is_regular_file()) {
-        FW_LOG("[DEBUG] Adding path " + entry.path().string() +
-               " to filewatcher...");
-        FW_LOG("[DEBUG] Checking if Path " + entry.path().string() +
-            " matches ignored paths and patterns ...");
-
-        if (isIgnored(entry.path().string())){
-            FW_LOG("[DEBUG] Path " + entry.path().string() + " matches ignored patterns.");
-            FW_LOG("[DEBUG] Adding Path " + entry.path().string() + " to filewatcher failed. ✗");
-            continue;
-        }
-
-        int wd = inotify_add_watch(inotify_fd, entry.path().c_str(),
-                                   IN_MOVED_TO | IN_MOVED_FROM | IN_MODIFY |
-                                       IN_CLOSE_WRITE);
-        watched_count++;
-        if (wd == -1)
-          return Result<void>::Err(FWError::make(
-              ErrorCode::SYS_IO_FAILED, "Error: inotify_add_watch failure on path " + entry.path().string() + " ✗"));
-        watch_registry[wd] = entry.path();
-        r_watch_registry[entry.path()] = wd;
-        FW_LOG("[DEBUG] Adding path " + entry.path().string() +
-               " to filewatcher completed. ✓");
-      } else if (entry.is_directory()) {
-          if(MAX_DEPTH > CURRENT_DEPTH)
-              TEST(add_path_internal(entry.path(), MAX_DEPTH, CURRENT_DEPTH + 1));
-          else
-              FW_LOG("[DEBUG] Path " + entry.path().string() + " is a directory. But MAX_DEPTH=" +
-                  to_string(MAX_DEPTH) + " have been reached. Child files won't be watched.");
-      } else if(!fs::is_directory(arg)) {
-        FW_LOG("[DEBUG] Path " + arg + " is a file. Adding to filewatcher...");
-        int wd = inotify_add_watch(inotify_fd, arg.c_str(),
-                                   IN_MOVED_TO | IN_MOVED_FROM | IN_MODIFY |
-                                       IN_CLOSE_WRITE);
-        watched_count++;
-        if (wd == -1)
-          return Result<void>::Err(FWError::make(
-              ErrorCode::SYS_IO_FAILED, "Error: inotify_add_watch failure on path " + arg + " ✗"));
-        watch_registry[wd] = arg;
-        r_watch_registry[arg] = wd;
-      }
-    }
-    return Result<void>::Ok();
-  }
-  // check if path already exists
-  for (auto [w, p] : watch_registry) {
-    if (arg == p) {
-      return Result<void>::Err(FWError::make(ErrorCode::PATH_ALREADY_EXISTS,
-                                             "Error: Path already exists ✗"));
-    }
-  }
-  // check if path is empty
-  if (arg.empty()) {
-    return Result<void>::Err(
-        FWError::make(ErrorCode::EMPTY_VALUE, "Error: path is empty ✗"));
-  }
-
-  // add path to inotify
   int wd = inotify_add_watch(inotify_fd, arg.c_str(),
                              IN_MOVED_TO | IN_MOVED_FROM | IN_MODIFY |
                                  IN_CLOSE_WRITE);
   if (wd == -1)
     return Result<void>::Err(FWError::make(
-        ErrorCode::SYS_IO_FAILED, "Error: inotify_add_watch failure ✗"));
+        ErrorCode::SYS_IO_FAILED, "Error: inotify_add_watch failure on path " + arg + " ✗"));
   watch_registry[wd] = arg;
   r_watch_registry[arg] = wd;
+  FW_LOG("[DEBUG] Adding path " + arg +
+         " to filewatcher completed. ✓");
   return Result<void>::Ok();
 }
+
 
 Result<void> FileWatcher::remove_path(const string &arg) {
   lock_guard<mutex> lock(registry_mutex);
