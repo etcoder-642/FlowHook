@@ -44,7 +44,7 @@ void register_add(CLI::App *app, flowhook::FlowHookCore *fh) {
     if (add_n_path.empty() && add_command.empty() &&
         command_on_success.empty() && command_on_failure.empty() &&
         ignored_path.empty() && ignored_pattern.empty()) {
-      std::cerr << "At least one of --path, --command, --on-success, --on-failure, --ignored-path, or --ignored-pattern is required\n"
+      std::cerr << "Error: At least one of --path, --command, --on-success, --on-failure, --ignored-path, or --ignored-pattern is required\n"
                 << std::endl;
       return;
     }

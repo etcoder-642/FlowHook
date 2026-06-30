@@ -347,14 +347,12 @@ UTEST_F(FlowHookFixture, stop_all_multiple_tasks)
 
 UTEST_F(FlowHookFixture, start_active_no_tasks)
 {
-    EXPECT_TRUE(utest_fixture->fh->start_active().isOk()); // idempotent
+    EXPECT_TRUE(utest_fixture->fh->start_active().isErr()); // idempotent
 }
 UTEST_F(FlowHookFixture, start_active_no_active_tasks)
 {
     ASSERT_TRUE(utest_fixture->fh->create_task("test_task_1", "/tmp/fh_test").isOk());
-    EXPECT_TRUE(utest_fixture->fh->start_active().isOk()); // No active tasks, so no error.
-    // The implementation of start_active in flowhook_core.cpp checks if tasks are active before starting.
-    // If no tasks are active, it will simply iterate and return Ok without starting anything.
+    EXPECT_TRUE(utest_fixture->fh->start_active().isErr());
 }
 UTEST_F(FlowHookFixture, start_active_one_active_task)
 {

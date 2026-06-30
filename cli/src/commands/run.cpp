@@ -54,7 +54,7 @@ void register_run(CLI::App *app, flowhook::FlowHookCore *fh) {
       }
     }
     std::cout << "Watching " << run_task_id
-              << "  (use --quiet to suppress build output)" << std::endl;
+              << "  (use --quiet to suppress build output, press Ctrl+C to stop)" << std::endl;
     pause();
   });
 }

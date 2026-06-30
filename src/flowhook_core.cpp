@@ -504,16 +504,22 @@ namespace flowhook {
     {
         if(task_runners.empty())
         {
-            return Result<void>::Ok(); //idempotent
+            return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: no tasks to start ✗"));
         }
 
+        bool found_active = false;
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
             if((*it)->is_active())
             {
+                found_active = true;
                 FW_LOG("[DEBUG] Starting task " + (*it)->get_task_id() + " ...");
                 TEST((*it)->start());
             }
+        }
+        if(!found_active)
+        {
+            return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: no active tasks to start ✗"));
         }
         FW_VERBOSE("[FLOWHOOK] All active tasks started ✓");
         return Result<void>::Ok();
