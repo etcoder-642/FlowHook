@@ -157,21 +157,21 @@ namespace flowhook {
         return std::vector<std::string>();
     }
 
-    Result<void> FlowHookCore::activate_task(const std::string &task_name)
+    Result<void> FlowHookCore::activate_task(const std::string &task_id)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
         {
-            string name = (*it)->get_task_name();
-            if(name == task_name)
+            string id = (*it)->get_task_id();
+            if(id == task_id)
             {
                 (*it)->activate();
                 config_manager->update_task((*it)->get_task());
-                FW_VERBOSE("[FLOWHOOK] Task activated: " + task_name + " ✓");
+                FW_VERBOSE("[FLOWHOOK] Task activated: " + task_id + " ✓");
                 return Result<void>::Ok();
             }
         }
 
-        return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found " + task_name + " ✗"));
+        return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found " + task_id + " ✗"));
     }
 
     Result<void> FlowHookCore::deactivate_task(const std::string &task_id)
@@ -489,7 +489,7 @@ namespace flowhook {
     {
         if(task_runners.empty())
         {
-            return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: no tasks to start ✗"));
+            return Result<void>::Ok(); //idempotent
         }
 
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
@@ -523,5 +523,7 @@ namespace flowhook {
                 watched_paths = TRY((*it)->get_watch_list(), vector<string>);
         }
         return Result<vector<string>>::Ok(watched_paths);
+
+        // activate
     }
 }

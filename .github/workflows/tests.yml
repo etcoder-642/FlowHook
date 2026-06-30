@@ -31,4 +31,4 @@ jobs:
               run: cmake --build build
 
             - name: Run tests
-              run: cd build && ./test_config_manager && ./test_task_runner && ./test_session_logger
+              run: cd build && ./test_config_manager && ./test_task_runner && ./test_session_logger && ./test_flowhook_core
