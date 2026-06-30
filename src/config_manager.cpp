@@ -117,12 +117,19 @@ namespace flowhook
         }
         _task.commands = _commands;
 
-        vector<string> _paths;
-        for (auto &cmd : json_task.at("paths"))
+        vector<string> _file_paths;
+        for (auto &cmd : json_task.at("file_paths"))
         {
-            _paths.push_back(cmd);
+            _file_paths.push_back(cmd);
         }
-        _task.paths = _paths;
+        _task.file_paths = _file_paths;
+
+        vector<string> _dir_paths;
+        for (auto &cmd : json_task.at("dir_paths"))
+        {
+            _dir_paths.push_back(cmd);
+        }
+        _task.dir_paths = _dir_paths;
 
         vector<string> _on_success;
         for (auto &cmd : json_task.at("on_success"))
@@ -136,6 +143,7 @@ namespace flowhook
         {
             _on_failure.push_back(cmd);
         }
+        _task.on_failure = _on_failure;
 
         vector<string> _ignored_paths;
         for (auto &path : json_task.at("ignored_paths"))
@@ -151,7 +159,6 @@ namespace flowhook
         }
         _task.ignored_patterns = _ignored_patterns;
 
-        _task.on_failure = _on_failure;
         _task.isActive = json_task.at("isActive");
         return Result<Task>::Ok(_task);
     }
@@ -166,11 +173,18 @@ namespace flowhook
         {
             _json_task["commands"].push_back(cmd);
         }
-        _json_task["paths"] = json::array();
-        for (auto &path : task.paths)
+        _json_task["file_paths"] = json::array();
+        for (auto &path : task.file_paths)
         {
-            _json_task["paths"].push_back(path);
+            _json_task["file_paths"].push_back(path);
         }
+
+        _json_task["dir_paths"] = json::array();
+        for (auto &path : task.dir_paths)
+        {
+            _json_task["dir_paths"].push_back(path);
+        }
+
         _json_task["on_success"] = json::array();
         for (auto &cmd : task.on_success)
         {
@@ -279,7 +293,8 @@ namespace flowhook
             _task.name = it->at("task_name");
             _task.id = it->at("working_directory");
             _task.commands = it->at("commands");
-            _task.paths = it->at("paths");
+            _task.file_paths = it->at("file_paths");
+            _task.dir_paths = it->at("dir_paths");
             _task.on_success = it->at("on_success");
             _task.on_failure = it->at("on_failure");
             _task.ignored_paths = it->at("ignored_paths");

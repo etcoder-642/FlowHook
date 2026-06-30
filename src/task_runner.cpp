@@ -222,7 +222,29 @@ Result<void> TaskRunner::delete_command(const string &command) {
       FWError::make(ErrorCode::COMMAND_NOT_FOUND, "Error: command not found"));
 }
 
+bool TaskRunner::check_path_existence(const string &path) {
+  for (auto &p : task.file_paths) {
+    if (p == path) {
+      return true;
+    }
+  }
+  for (auto &p : task.dir_paths) {
+    if (p == path) {
+      return true;
+    }
+  }
+  return false;
+}
+
 Result<void> TaskRunner::add_path(const string &path, int MAX_DEPTH) {
+    if(check_path_existence(path)) return Result<void>::Ok(); // idempotent
+    if(!fs::exists(path))
+    {
+        return Result<void>::Err(FWError::make(
+            ErrorCode::PATH_NOT_FOUND,
+            "Error: provided path " + path + " does not exist! ✗"));
+    }
+
   TEST(add_path_internal(path, MAX_DEPTH, 0));
   if(fs::is_directory(path))
   {
@@ -234,6 +256,7 @@ Result<void> TaskRunner::add_path(const string &path, int MAX_DEPTH) {
 
 Result<void> TaskRunner::add_path_internal(const string &path, int MAX_DEPTH,
                                            int CURRENT_DEPTH) {
+  if(check_path_existence(path)) return Result<void>::Ok(); // idempotent
   // if path is directory add each files inside it iteratively
   if (isIgnored(path)) {
     FW_LOG("[DEBUG] Path " + path + " matches ignored paths and patterns.");
@@ -242,6 +265,7 @@ Result<void> TaskRunner::add_path_internal(const string &path, int MAX_DEPTH,
   }
 
   if (fs::is_directory(path)) {
+      task.dir_paths.push_back(path);
     FW_LOG("[DEBUG] Path " + path +
            " is a directory adding child files recursively...");
     for (auto &entry : fs::directory_iterator(path)) {
@@ -258,7 +282,7 @@ Result<void> TaskRunner::add_path_internal(const string &path, int MAX_DEPTH,
                  " to task failed. ✗");
           continue;
         }
-        task.paths.push_back(entry.path().string());
+        resolved_files.push_back(entry.path().string());
         fw->add_path(entry.path().string());
 
         FW_LOG("[DEBUG] Adding path " + entry.path().string() +
@@ -275,7 +299,8 @@ Result<void> TaskRunner::add_path_internal(const string &path, int MAX_DEPTH,
   }
   else if (!fs::is_directory(path)) {
     FW_LOG("[DEBUG] Path " + path + " is a file. Adding to task...");
-    task.paths.push_back(path);
+    task.file_paths.push_back(path);
+    resolved_files.push_back(path);
     fw->add_path(path);
   }
   return Result<void>::Ok();
@@ -283,15 +308,32 @@ Result<void> TaskRunner::add_path_internal(const string &path, int MAX_DEPTH,
 
 
 Result<void> TaskRunner::delete_path(const string &path) {
-  for (auto it = task.paths.begin(); it != task.paths.end(); it++) {
-    if (*it == path) {
-      task.paths.erase(it);
-      return Result<void>::Ok();
+    if(!fs::exists(path))
+    {
+        return Result<void>::Err(FWError::make(
+            ErrorCode::PATH_NOT_FOUND,
+            "Error: provided path " + path + " does not exist! ✗"));
     }
-  }
+
+    if(!fs::is_directory(path)){
+        for (auto it = task.file_paths.begin(); it != task.file_paths.end(); it++) {
+          if (*it == path) {
+            task.file_paths.erase(it);
+            return Result<void>::Ok();
+          }
+        }
+    } else {
+        for (auto it = task.dir_paths.begin(); it != task.dir_paths.end(); it++) {
+          if (*it == path) {
+            task.dir_paths.erase(it);
+            return Result<void>::Ok();
+          }
+        }
+    }
   TEST(fw->remove_path(path));
   return Result<void>::Err(
-      FWError::make(ErrorCode::EVENT_NOT_FOUND, "Error: path not found"));
+      FWError::make(ErrorCode::PATH_NOT_FOUND, "Error: path not found")
+  );
 }
 
 Result<void> TaskRunner::add_on_success(const string &command) {
@@ -472,8 +514,7 @@ Result<void> TaskRunner::delete_callback(const WatchCallback &callback) {
 Result<void> TaskRunner::start() {
   FW_LOG("[DEBUG] Starting TaskRunner...");
   if (task.isRunning) {
-    return Result<void>::Err(FWError::make(
-        ErrorCode::TASK_ALREADY_RUNNING, "Error: task runner already running"));
+    return Result<void>::Ok(); // idempotent
   }
   task.isRunning = true;
 

@@ -48,8 +48,8 @@ namespace flowhook_cli {
             if (list_tasks) {
                 std::cout << "All registered Tasks:\n" << std::endl;
                 for (const auto& task : tasks) {
-                    std::cout << "Name: " << task.name << std::endl;
-                    std::cout << "Working Directory: " << task.id << "\n" << std::endl;
+                    std::cout << " Name: " << task.name << std::endl;
+                    std::cout << " Working Directory: " << task.id << "\n" << std::endl;
                 }
             }
 
@@ -60,10 +60,21 @@ namespace flowhook_cli {
                     return;
                 }
 
-                std::cout << "Paths:\n" << std::endl;
-                for(const auto& path : ts->paths) {
-                    std::cout << path << std::endl;
+                std::cout << "Watched Directories:\n" << std::endl;
+                for(const auto& path : ts->dir_paths) {
+                    std::cout << " " << path << std::endl;
                 }
+
+                std::cout << "Standalone File:\n" << std::endl;
+                for(const auto& path : ts->file_paths) {
+                    std::cout << " " << path << std::endl;
+                }
+
+                std::cout << "All Currently Watched Files:\n" << std::endl;
+                for(const auto& path : fh->get_resolved_files(ts->id)) {
+                    std::cout << " " << path << std::endl;
+                }
+
             }
 
             if (list_commands) {
@@ -74,7 +85,7 @@ namespace flowhook_cli {
 
                 std::cout << "Commands:\n" << std::endl;
                 for(const auto& command : ts->commands) {
-                    std::cout << command << std::endl;
+                    std::cout << " " << command << std::endl;
                 }
             }
 
@@ -86,12 +97,12 @@ namespace flowhook_cli {
 
                 std::cout << "Ignored paths:\n" << std::endl;
                 for(const auto& ignored_paths : ts->ignored_paths) {
-                    std::cout << ignored_paths << std::endl;
+                    std::cout << " " << ignored_paths << std::endl;
                 }
                 std::cout << std::endl;
                 std::cout << "Ignored patterns:\n" << std::endl;
                 for(const auto& ignored_pattern : ts->ignored_patterns) {
-                    std::cout << ignored_pattern << std::endl;
+                    std::cout << " " << ignored_pattern << std::endl;
                 }
                 std::cout << std::endl;
             }
@@ -104,7 +115,7 @@ namespace flowhook_cli {
 
                 std::cout << "On success:\n" << std::endl;
                 for(const auto& command : ts->on_success) {
-                    std::cout << command << std::endl;
+                    std::cout << " " << command << std::endl;
                 }
                 std::cout << std::endl;
             }
@@ -117,7 +128,7 @@ namespace flowhook_cli {
 
                 std::cout << "On failure:\n" << std::endl;
                 for(const auto& command : ts->on_failure) {
-                    std::cout << command << std::endl;
+                    std::cout << " " << command << std::endl;
                 }
                 std::cout << std::endl;
             }

@@ -68,7 +68,8 @@ namespace flowhook
         std::string name = ""; // user assigned name can be duplicated, defaults to the filename of the cwd
         int watching_depth = 1;
         std::vector<std::string> commands = {};
-        std::vector<std::string> paths = {};
+        std::vector<std::string> file_paths = {};
+        std::vector<std::string> dir_paths = {};
 
         std::vector<std::string> on_success = {};
         std::vector<std::string> on_failure = {};
@@ -79,7 +80,7 @@ namespace flowhook
         bool isRunning = false;
 
         bool isNull() const {
-            return id.empty() && name.empty() && commands.empty() && paths.empty() &&
+            return id.empty() && name.empty() && commands.empty() && file_paths.empty() && dir_paths.empty() &&
                 on_success.empty() && on_failure.empty() && !isActive && !isRunning && watching_depth == 1 &&
                 ignored_paths.empty() && ignored_patterns.empty();
         }

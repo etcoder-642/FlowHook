@@ -25,10 +25,12 @@ namespace flowhook
         bool flushed;
         bool is_init = false;
         int execution_id = 0;
+        std::vector<std::string> resolved_files;
 
         TaskRunner() = default;
         Result<void> init(const std::string &task_name, const std::string &working_directory);
         Result<void> add_path_internal(const std::string &path, int MAX_DEPTH, int CURRENT_DEPTH);
+        bool check_path_existence(const std::string &path);
     public:
         static Result<TaskRunner*> create(const std::string &task_name, const std::string &working_directory);
         ~TaskRunner();
@@ -36,6 +38,8 @@ namespace flowhook
         std::string get_task_name() const { return task.name; }
         std::string get_task_id() const { return task.id; }
         Task get_task() const { return task; }
+        std::vector<std::string> get_resolved_files() const { return resolved_files; }
+
 
         bool isIgnored(const std::string &path);
 

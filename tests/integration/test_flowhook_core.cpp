@@ -10,6 +10,11 @@ using namespace std;
 using namespace flowhook;
 namespace fs = std::filesystem;
 
+bool FLOWHOOK_DEBUG = false;
+bool FLOWHOOK_VERBOSE = false;
+bool FLOWHOOK_QUIET = false;
+
+
 struct FlowHookFixture
 {
     FlowHookCore* fh;

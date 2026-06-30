@@ -56,7 +56,9 @@ namespace flowhook {
 
             for(auto c: task.commands)
                 tr->add_command(c);
-            for(auto p: task.paths)
+            for(auto p: task.file_paths)
+                tr->add_path(p);
+            for(auto p: task.dir_paths)
                 tr->add_path(p);
             for(auto s: task.on_success)
                 tr->add_on_success(s);
@@ -140,6 +142,19 @@ namespace flowhook {
 
 
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found " + task_id + " ✗"));
+    }
+
+
+    std::vector<std::string> FlowHookCore::get_resolved_files(const std::string task_id)
+    {
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            if((*it)->get_task_id() == task_id)
+            {
+                return (*it)->get_resolved_files();
+            }
+        }
+        return std::vector<std::string>();
     }
 
     Result<void> FlowHookCore::activate_task(const std::string &task_name)

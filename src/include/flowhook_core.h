@@ -30,6 +30,8 @@ namespace flowhook {
             Result<void> create_task(const std::string &task_name, const std::string &task_id);
             Result<void> delete_task(const std::string &task_id);
 
+            std::vector<std::string> get_resolved_files(const std::string task_id);
+
             Result<void> start_task(const std::string &task_id);
             Result<void> stop_task(const std::string &task_id);
 
