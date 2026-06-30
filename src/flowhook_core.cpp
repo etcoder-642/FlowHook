@@ -33,7 +33,7 @@ namespace flowhook {
         default_ignored_patterns = {
             "*.o", "*.a", "*.so", "*.out", "*.exe",
             "*.swp", "*.swo", "*~", ".#*",
-            "*.class", "*.pyc", "*.log", ".git"
+            "*.class", "*.pyc", "*.log", "*.git"
         };
         default_ignored_paths   = {
             ".git"
@@ -53,22 +53,22 @@ namespace flowhook {
         for(auto task: tasks)
         {
             TaskRunner* tr = TRY(TaskRunner::create(task.name, task.id), void);
+            for(auto i: task.ignored_paths)
+                TEST(tr->add_ignored_path(i));
+            for(auto ip: task.ignored_patterns)
+                TEST(tr->add_ignored_pattern(ip));
 
             for(auto c: task.commands)
-                tr->add_command(c);
+                TEST(tr->add_command(c));
             for(auto p: task.file_paths)
-                tr->add_path(p);
+                TEST(tr->add_path(p));
             for(auto p: task.dir_paths)
-                tr->add_path(p);
+                TEST(tr->add_path(p));
             for(auto s: task.on_success)
-                tr->add_on_success(s);
+                TEST(tr->add_on_success(s));
             for(auto f: task.on_failure)
-                tr->add_on_failure(f);
+                TEST(tr->add_on_failure(f));
 
-            for(auto i: task.ignored_paths)
-                tr->add_ignored_path(i);
-            for(auto ip: task.ignored_patterns)
-                tr->add_ignored_pattern(ip);
             if(task.isActive)
             {
                 tr->activate();
@@ -144,6 +144,20 @@ namespace flowhook {
         return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found " + task_id + " ✗"));
     }
 
+    Result<void> FlowHookCore::set_depth(const std::string &task_id, int depth)
+    {
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            if((*it)->get_task_id() == task_id)
+            {
+                TEST((*it)->set_depth(depth));
+                config_manager->update_task((*it)->get_task());
+                return Result<void>::Ok();
+            }
+        }
+        return Result<void>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found " + task_id + " ✗"));
+    }
+
 
     std::vector<std::string> FlowHookCore::get_resolved_files(const std::string task_id)
     {
@@ -182,6 +196,7 @@ namespace flowhook {
             if(id == task_id)
             {
                 (*it)->deactivate();
+                config_manager->update_task((*it)->get_task());
                 FW_VERBOSE("[FLOWHOOk] Task deactivated: " + task_id + " ✓");
                 return Result<void>::Ok();
             }

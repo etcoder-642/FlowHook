@@ -27,6 +27,7 @@ namespace flowhook {
             ~FlowHookCore();
 
             Result<void> set_default_ignored();
+            Result<void> set_depth(const std::string &task_id, int depth);
             Result<void> create_task(const std::string &task_name, const std::string &task_id);
             Result<void> delete_task(const std::string &task_id);
 

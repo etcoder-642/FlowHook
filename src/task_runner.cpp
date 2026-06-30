@@ -63,14 +63,14 @@ TaskRunner::~TaskRunner() {
 }
 
 Result<void> TaskRunner::set_depth(int num) {
-  if (num > 6) {
+  if (num > 10) {
     return Result<void>::Err(
         FWError::make(ErrorCode::INVALID_DEPTH,
-                      "Error: invalid depth set - depth too much ✗"));
+                      "Error: invalid depth set - depth too much ✗, use a depth between 1 and 10"));
   } else if (num < 1) {
     return Result<void>::Err(
         FWError::make(ErrorCode::INVALID_DEPTH,
-                      "Error: invalid depth set - depth set too low ✗"));
+                      "Error: invalid depth set - depth set too low ✗, use a depth between 1 and 10"));
   }
 
   task.watching_depth = num;
@@ -272,7 +272,7 @@ Result<void> TaskRunner::add_path_internal(const string &path, int MAX_DEPTH,
       if (entry.is_regular_file()) {
         FW_LOG("[DEBUG] Adding path " + entry.path().string() +
                " to filewatcher...");
-        FW_LOG("[DEBUG] Checking if Path " + entry.path().string() +
+        FW_LOG("[DEBUG] Checking if resolved file path " + entry.path().string() +
                " matches ignored paths and patterns ...");
 
         if (isIgnored(entry.path().string())) {
@@ -289,7 +289,7 @@ Result<void> TaskRunner::add_path_internal(const string &path, int MAX_DEPTH,
                " to task completed. ✓");
       } else if (entry.is_directory()) {
         if (MAX_DEPTH > CURRENT_DEPTH)
-          TEST(add_path_internal(entry.path(), MAX_DEPTH, CURRENT_DEPTH + 1));
+          TEST(add_path_internal(entry.path().string(), MAX_DEPTH, CURRENT_DEPTH + 1));
         else
           FW_LOG("[DEBUG] Path " + entry.path().string() +
                  " is a directory. But MAX_DEPTH=" + to_string(MAX_DEPTH) +

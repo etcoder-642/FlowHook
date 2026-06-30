@@ -10,14 +10,12 @@ void register_remove(CLI::App *app, flowhook::FlowHookCore *fh) {
 
     // add subcommand
   auto *remove =
-      app->add_subcommand("remove", "remove an element from a task\n");
+      app->add_subcommand("remove", "remove an element from a task\n // removes the task itself if no OPTION is provided");
 
   // this is a purely ceremonial flag(so that CLI11 won't say there is unrecognized flag)
   // the actual parsing of verbose and setting of the environment variable is done in main.cpp
   remove->add_flag("--debug", FLOWHOOK_DEBUG, "Enable debug output. \n// is an extremely detailed output that shows every step of the process.");
   remove->add_flag("--verbose", FLOWHOOK_VERBOSE, "Enable verbose output. \n// shows a summary of the process.");
-
-
 
   static std::string task_id = "";
   static std::string removed_path = "";
