@@ -236,7 +236,7 @@ bool TaskRunner::check_path_existence(const string &path) {
   return false;
 }
 
-Result<void> TaskRunner::add_path(const string &path, int MAX_DEPTH) {
+Result<void> TaskRunner::add_path(const string &path) {
     if(check_path_existence(path)) return Result<void>::Ok(); // idempotent
     if(!fs::exists(path))
     {
@@ -245,7 +245,7 @@ Result<void> TaskRunner::add_path(const string &path, int MAX_DEPTH) {
             "Error: provided path " + path + " does not exist! ✗"));
     }
 
-  TEST(add_path_internal(path, MAX_DEPTH, 0));
+  TEST(add_path_internal(path, task.watching_depth, 0));
   if(fs::is_directory(path))
   {
       FW_VERBOSE("[FLOWHOOK] Adding " + path + "'s children to task runner completed. ✓");

@@ -160,6 +160,8 @@ namespace flowhook
         _task.ignored_patterns = _ignored_patterns;
 
         _task.isActive = json_task.at("isActive");
+        _task.watching_depth = json_task.at("watching_depth");
+        _task.isRunning = json_task.at("isRunning");
         return Result<Task>::Ok(_task);
     }
 
@@ -204,6 +206,8 @@ namespace flowhook
             _json_task["ignored_patterns"].push_back(pattern);
         }
         _json_task["isActive"] = task.isActive;
+        _json_task["watching_depth"] = task.watching_depth;
+        _json_task["isRunning"] = task.isRunning;
         return Result<json>::Ok(_json_task);
     }
 
@@ -300,6 +304,8 @@ namespace flowhook
             _task.ignored_paths = it->at("ignored_paths");
             _task.ignored_patterns = it->at("ignored_patterns");
             _task.isActive = it->at("isActive");
+            _task.watching_depth = it->at("watching_depth");
+            _task.isRunning = it->at("isRunning");
             tasks.push_back(_task);
         }
         return Result<vector<Task>>::Ok(tasks);

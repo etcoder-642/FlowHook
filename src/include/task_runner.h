@@ -60,7 +60,7 @@ namespace flowhook
         Result<void> add_on_failure(const std::string &command);
         Result<void> delete_on_failure(const std::string &command);
 
-        Result<void> add_path(const std::string &path, int MAX_DEPTH = 3);
+        Result<void> add_path(const std::string &path);
         Result<void> delete_path(const std::string &path);
 
         Result<void> add_ignored_path(const std::string &path);

@@ -66,7 +66,7 @@ namespace flowhook
     {
         std::string id = ""; // this is a name that will be used internally and always unique, not assigned by the user. Mostly the absolute path of the cwd
         std::string name = ""; // user assigned name can be duplicated, defaults to the filename of the cwd
-        int watching_depth = 1;
+        int watching_depth = 3;
         std::vector<std::string> commands = {};
         std::vector<std::string> file_paths = {};
         std::vector<std::string> dir_paths = {};
@@ -81,7 +81,7 @@ namespace flowhook
 
         bool isNull() const {
             return id.empty() && name.empty() && commands.empty() && file_paths.empty() && dir_paths.empty() &&
-                on_success.empty() && on_failure.empty() && !isActive && !isRunning && watching_depth == 1 &&
+                on_success.empty() && on_failure.empty() && !isActive && !isRunning && watching_depth == 3 &&
                 ignored_paths.empty() && ignored_patterns.empty();
         }
     };
