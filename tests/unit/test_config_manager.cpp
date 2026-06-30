@@ -37,13 +37,13 @@ UTEST_F_SETUP(ConfigManagerFixture)
     fs::create_directories("/tmp/cm_test2");
 
     utest_fixture->t = new Task("test_task", "/tmp/cm_test", 3, {"ls"},
-        {"/tmp/cm_test_file.txt"}, vector<string>{"ls"}, vector<string>{"ls"}, {"*.o"}, {".git"}, true, true);
+        {"/tmp/cm_test_file.txt"}, {"/tmp/cm_test"}, vector<string>{"ls"}, vector<string>{"ls"}, {"*.o"}, {".git"}, true, true);
 
     utest_fixture->t2 = new Task("test_task2", "/tmp/cm_test2", 3, {"ls"},
-        {"/tmp/cm_test_file.txt"}, vector<string>{"ls"}, vector<string>{"cd, ls"}, {"*.o"}, {".git"}, true, true);
+        {"/tmp/cm_test_file.txt"}, {"/tmp/cm_test"}, vector<string>{"ls"}, vector<string>{"cd, ls"}, {"*.o"}, {".git"}, true, true);
 
     utest_fixture->t3 = new Task("test_task1", "/tmp/cm_test", 3, {"cd", "make"},
-        {"/tmp/cm_test_file.txt"}, vector<string>{"ls"}, vector<string>{"cd, ls"}, {"*.o"}, {".git"}, true, true);
+        {"/tmp/cm_test_file.txt"}, {"/tmp/cm_test"}, vector<string>{"ls"}, vector<string>{"cd, ls"}, {"*.o"}, {".git"}, true, true);
 }
 
 UTEST_F_TEARDOWN(ConfigManagerFixture)
