@@ -37,4 +37,4 @@ jobs:
               run: sudo cmake --install build
 
             - name: Run CLI tests
-              run: bash cli/tests/run_all.sh
+              run: bash cli/tests/test_cli.sh
