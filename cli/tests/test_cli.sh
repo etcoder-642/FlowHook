@@ -9,7 +9,7 @@ source ./test_add.sh
 source ./test_init.sh
 source ./test_list.sh
 source ./test_run.sh
-
+source ./test_remove.sh
 
 
 # -- TEST INIT --
@@ -50,6 +50,24 @@ test_run_all_starts_and_exits_on_sigint
 test_run_active_with_no_active_tasks_errors
 test_run_active_with_active_task_starts_and_exits
 test_run_quiet_suppresses_command_output
+
+# -- TEST REMOVE --
+
+test_remove_path_removes_from_list
+test_remove_nonexistent_path_errors
+test_remove_command_removes_from_list
+test_remove_nonexistent_command_errors
+test_remove_on_success_removes_from_list
+test_remove_nonexistent_on_success_errors
+test_remove_on_failure_removes_from_list
+test_remove_nonexistent_on_failure_errors
+test_remove_ignored_path_removes_from_list
+test_remove_nonexistent_ignored_path_errors
+test_remove_ignored_pattern_removes_from_list
+test_remove_nonexistent_ignored_pattern_errors
+test_remove_whole_task_with_force_flag
+test_remove_whole_task_confirm_yes_deletes
+test_remove_whole_task_decline_keeps_task
 
 
 echo "DEBUG config dir: $FLOWHOOK_CONFIG_DIR_TEST"
