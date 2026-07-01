@@ -34,7 +34,9 @@ jobs:
               run: cd build && ./test_config_manager && ./test_task_runner && ./test_session_logger && ./test_flowhook_core
 
             - name: Install flowhook binary
-              run: sudo cmake --install build
+              run: |
+                  sudo cmake --install build
+                  which flowhook || echo "flowhook not found after install"
 
             - name: Run CLI tests
               run: bash cli/tests/test_cli.sh

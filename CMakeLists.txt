@@ -5,6 +5,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 configure_file(src/version.h.in version.h)
 set(CMAKE_CXX_STANDARD 20)
 
+install(TARGETS flowhook DESTINATION bin)
+
 find_package(ftxui CONFIG REQUIRED)
 
 # core library
