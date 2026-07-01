@@ -171,6 +171,31 @@ namespace flowhook {
         return std::vector<std::string>();
     }
 
+    Result<int> FlowHookCore::get_task_depth(const std::string &task_id)
+    {
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            if((*it)->get_task_id() == task_id)
+            {
+                auto t = (*it)->get_task();
+                return Result<int>::Ok(t.watching_depth);
+            }
+        }
+        return Result<int>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found " + task_id + " ✗"));
+    }
+
+    Result<bool> FlowHookCore::is_task_active(const std::string &task_id)
+    {
+        for(auto it = task_runners.begin(); it != task_runners.end(); it++)
+        {
+            if((*it)->get_task_id() == task_id)
+            {
+                return Result<bool>::Ok((*it)->is_active());
+            }
+        }
+        return Result<bool>::Err(FWError::make(ErrorCode::TASK_NOT_FOUND, "Error: task not found " + task_id + " ✗"));
+    }
+
     Result<void> FlowHookCore::activate_task(const std::string &task_id)
     {
         for(auto it = task_runners.begin(); it != task_runners.end(); it++)
