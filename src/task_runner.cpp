@@ -245,6 +245,11 @@ Result<void> TaskRunner::add_path(const string &path) {
         FWError::make(ErrorCode::PATH_NOT_FOUND,
                       "Error: provided path " + path + " does not exist! ✗"));
   }
+  if(isIgnored(path))
+  {
+      FW_LOG("[DEBUG] Path " + path + " matches ignored paths and patterns.");
+      return Result<void>::Ok();
+  }
 
   TEST(add_path_internal(path, task.watching_depth, 0));
   if (fs::is_directory(path)) {
