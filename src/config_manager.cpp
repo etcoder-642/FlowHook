@@ -10,7 +10,7 @@
 
 #include "include/config_manager.h"
 #include "include/macros.hpp"
-#include "./version.h.in"
+#include "version.h"
 
 namespace fs = std::filesystem;
 using namespace nlohmann;
