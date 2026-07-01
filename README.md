@@ -1,264 +1,251 @@
-# FlowHook - Asynchronous Build Automation Engine
+# FlowHook
 
-FlowHook is a multi-threaded, Linux-native automation engine that eliminates manual compile-and-run workflows by watching filesystem events and executing build commands automatically.
+ ```text
+ ███████╗██╗      ██████╗ ██╗    ██╗██╗  ██╗ ██████╗  ██████╗ ██╗  ██╗    
+ ██╔════╝██║     ██╔═══██╗██║    ██║██║  ██║██╔═══██╗██╔═══██╗██║ ██╔╝    
+ █████╗  ██║     ██║   ██║██║ █╗ ██║███████║██║   ██║██║   ██║█████╔╝     
+ ██╔══╝  ██║     ██║   ██║██║███╗██║██╔══██║██║   ██║██║   ██║██╔═██╗     
+ ██║     ███████╗╚██████╔╝╚███╔███╔╝██║  ██║╚██████╔╝╚██████╔╝██║  ██╗    
+ ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝    
 
-## Architecture Overview
-
-FlowHook employs a structural composition pattern where a `TaskWatcher` central manager encapsulates both a `FileWatcher` (inotify-based event monitor) and a `SessionLogger` (JSON diagnostic recorder). The system operates via a lean callback pattern, passing raw function wrappers to the filesystem interceptor layer.
-
-### Core Components
-
-- **FileWatcher**: Direct Linux inotify interface with background polling threads
-- **TaskWatcher**: Orchestration layer managing commands, paths, and hooks
-- **SessionLogger**: JSON-based session recording with timestamps and event tracking
-- **Task Struct**: Configuration container for directories, commands, and hook scripts
-
-## Prerequisites
-
-- Linux OS (inotify required)
-- C++20 compiler (g++ 10+ or clang 12+)
-- nlohmann/json library
-- Make build system
-
-## Installation
-
-### 1. Install nlohmann/json
-
-```bash
-# Ubuntu/Debian
-sudo apt-get install nlohmann-json3-dev
-
-# Arch Linux
-sudo pacman -S nlohmann-json
-
-# From source (if package unavailable)
-git clone https://github.com/nlohmann/json.git
-sudo cp -r json/include/nlohmann /usr/local/include/
 ```
 
-### 2. Clone and Build
+[![Build Status](https://github.com/etcoder-642/FlowHook/actions/workflows/tests.yml/badge.svg)](https://github.com/etcoder-642/FlowHook/actions) 
+![C++ Version](https://img.shields.io/badge/Language-C%2B%2B17%2F20-blue?logo=cplusplus)
+![Platform](https://img.shields.io/badge/Platform-Linux-orange?logo=linux)
+![License](https://img.shields.io/badge/License-MIT-green)
 
+
+## Table of Contents
+1. [Introduction]()
+2. [Quick Demo (A visual walkthrough of FlowHook managing a real build with success/failure branching)]()
+3. [Why FlowHook?]()
+4. [Installation]()
+5. [Command Reference & Usage]()
+6. [Known Issues]()
+
+
+### Introduction
+
+FlowHook is an open-source CLI tool that can automate build processes by watching filesystem events and executing build commands automatically. It is designed to be simple, efficient, and easy to use. It enables you to define your build commands using a simple CLI interface. It supports multiple build commands. And it also enables you to hook other set of commands to be triggered after a successful build or a failed build.
+
+It can watch your directory for changes and execute build commands automatically when changes are detected.
+
+### Quick Demo
+
+[![asciinema demo](https://asciinema.org/a/Wc2xprecUM1YnUK0.svg)](https://asciinema.org/a/Wc2xprecUM1YnUK0)
+
+*Click the player above to watch a full 3-minute walkthrough of FlowHook tracking file modifications and running build commands automatically including the hook feature.*
+
+
+### Why FlowHook?
+
+## 💡 Why FlowHook?
+
+FlowHook started out of personal necessity and a desire to look under the hood. A few months ago, I began diving deep into C++ and exploring systems programming. While falling in love with low-level control, I quickly hit a massive developer bottleneck: the constant, frustrating friction of having to manually re-compile and execute code every single time I made a minor file modification just to see if my changes worked. 
+
+While heavy, pre-existing file-watching frameworks exist, I decided to build FlowHook as a raw learning tool to solve this exact pain point. As the project evolved, my focus shifted toward tailoring the tool to handle the specific real-world workflow issues I face every night, shaping it into something I actually want to use every day. 
+
+What began as a simple automation script grew into a highly optimized, zero-bloat systems utility. Because it operates close to the iron and leverages the Linux kernel’s native `inotify` subsystem, it monitors deep project directories with near-zero CPU overhead and a virtually invisible memory footprint. 
+
+### What Makes it Different?
+While there are other file watchers out there, FlowHook was designed with a few core strengths that are difficult to find out-of-the-box in popular alternatives:
+
+* **True Persistence:** FlowHook configurations don't evaporate. Your active watch environments and tasks are securely serialized to disk. If your system fully shuts down or reboots, FlowHook recovers its exact state gracefully on reload without locking up on stale paths. Once you set up your system you only need to run the `flowhook run` command whenever you want to start monitoring your project and start a session.
+* **Multi-Project Task Orchestration:** It isn't restricted to a single folder. A single instance can keep track of completely separate projects, mapping out individual boundaries and firing off independent hook configurations concurrently.
+* **Contextual Branching (`on_success` / `on_failure`):** Instead of blindly executing a single catch-all command string on save, FlowHook intrinsically tracks execution exit states. This allows you to uniquely fork separate execution paths—like running an extensive test suite only if the compilation passes, or sending a desktop notification the exact millisecond a build breaks.
+* **Language Agnostic:** Though engineered in native C++, FlowHook is entirely toolchain-agnostic. Whether you are compiling C++, watching TypeScript builds, restarting a Go backend, or running Python scripts, it hooks into any CLI pipeline seamlessly.
+* **Session Tracking:** FlowHook keeps track of your active sessions, and logs information about each of your sessions, into a log file called `<YOUR_PROJECT_NAME>-flowhook.log` right in your project directory. So you can easily review the history of your sessions and your build history including the terminal output and several other informations, and debug any issues that arise at any time.
+
+### Installation
+
+#### Option 1
+
+This is the easiest way to get started with FlowHook.
+
+1. Download the latest release from the [GitHub releases page](https://github.com/etcoder-642/FlowHook/releases).
+   You can use this command to download the latest release:
 ```bash
+curl -L -o flowhook https://github.com/etcoder-642/FlowHook/releases/latest/download/flowhook
+```
+2. Make the `flowhook` binary executable:
+```bash
+chmod +x flowhook
+```
+3. Move it into your local binary path for system-wide access
+```bash
+sudo mv flowhook /usr/local/bin/
+```
+
+#### Option 2
+
+If you prefer to compile from source or are modifying the codebase, ensure your system has a modern C++ toolchain supporting C++17/20, cmake, and make.
+
+On Ubuntu/Debian or WSL (Ubuntu), install the build requirements:
+
+```Bash
+sudo apt update && sudo apt install -y build-essential cmake
+```
+Then compile and install:
+1. Clone and navigate into the project
+
+```Bash
 git clone https://github.com/etcoder-642/FlowHook.git
-cd flowhook
-make
+cd FlowHook
+```
+2. Create and enter a clean build directory
+```Bash
+mkdir build && cd build
 ```
 
-The executable will be created at `bin/filewatcher`.
-
-## Project Structure
-
+3. Generate an optimized Release build configuration
+```Bash
+cmake -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release ..
 ```
-flowhook/
-├── include/
-│   ├── filewatcher.h
-│   ├── task_watcher.h
-|   ├── json.hpp
-│   ├── session_logger.h
-│   ├── display.h
-│   └── error/
-│       ├── error.h
-│       └── result.h
-├── src/
-│   ├── main.cpp
-│   ├── filewatcher.cpp
-│   ├── task_watcher.cpp
-│   ├── session_logger.cpp
-│   └── display.cpp
-├── bin/
-│   └── filewatcher (generated)
-└── Makefile
+4. Compile the binary using all available CPU cores(to save some of your time😅)
+```Bash
+make -j$(nproc)
+```
+5. Install system-wide to `/usr/local/bin`
+```Bash
+sudo make install
 ```
 
-## Usage
+#### Verifying the Installation
 
-### Visual Demo
+To verify the installation, run `flowhook --version` and ensure it outputs the version number.
 
-1. *visual demo showing how to setup and run some custom commands of FlowHook initially*
-  <img width="927" height="320" alt="image" src="https://github.com/user-attachments/assets/60420145-72a8-4310-a5ee-d17b6a47a12b" />
+## Command Reference & Usage
 
-2. *visual demo showing list of all commands*
-   <img width="1751" height="540" alt="image" src="https://github.com/user-attachments/assets/4a38b09e-937d-4d4e-a2a7-c883322736c3" />
+FlowHook provides a Git-like subcommand interface to seamlessly configure, track, and monitor your development pipelines.
 
-3. *visual demo showing the process starting a watch, stopping a watch and exiting interface*
-   <img width="914" height="232" alt="image" src="https://github.com/user-attachments/assets/e19abe59-6d8f-4a9f-b87b-61fe73d375b6" />
+### Quick Start Workflow
 
-
-### Basic Workflow
-
-1. **Start FlowHook**
-   ```bash
-   ./bin/filewatcher
-   ```
-
-2. **Configure Task Instance**
-   - Enter watch instance name (e.g., "my_project")
-   - Enter directory path to monitor (e.g., "/home/user/project/src")
-
-3. **Add Commands**
-   *it is recommended you add build commands only here*
-   ```
-   add-command
-   > g++ -Wall -o program main.cpp
-   ```
-
-5. **Add Paths to Watch**
-   *if you want to add other files to watch other than the one you entered initially, it is recommended you add directory paths only*
-   ```
-   add-path
-   > /home/user/project/src
-   ```
-
-7. **Add Hook Scripts (Optional)**
-   ```
-   add-on-success
-   > echo "Build successful!"
-
-   add-on-failure
-   > notify-send "Build failed!"
-   ```
-
-8. **Start Monitoring**
-   ```
-   start
-   ```
-9. **Stop Monitoring**
-  ```
-    stop`
-  ```
-10. **Exit interface**
-  ```
-exit
-``` 
-
-### Command Reference
-
-| Command | Description |
-|---------|-------------|
-| `add-command` | Add build command to execute on file changes |
-| `remove-command` | Remove a build command |
-| `add-path` | Add file/directory to watch list |
-| `remove-path` | Remove a path from watch list |
-| `add-on-success` | Add command to execute on successful build |
-| `remove-on-success` | Remove success hook |
-| `add-on-failure` | Add command to execute on build failure |
-| `remove-on-failure` | Remove failure hook |
-| `start` | Begin monitoring and auto-execution |
-| `stop` | Stop monitoring |
-| `help` | Display all commands |
-| `exit` | Quit FlowHook |
-
-## How It Works
-
-### Event Detection Pipeline
-
-1. **Inotify Initialization**: `FileWatcher` creates an inotify instance with non-blocking I/O
-2. **Watch Registration**: Directories/files are registered using `inotify_add_watch` with masks for `IN_CLOSE_WRITE`, `IN_CREATE`, `IN_DELETE`, `IN_MODIFY`, and `IN_ACCESS`
-3. **Background Thread**: Isolated thread runs polling loop with `poll()` system call
-4. **Event Handling**: When events occur, they're extracted from kernel buffers and demultiplexed by event mask
-
-### Command Execution
-
-When a filesystem event triggers:
-
-1. **Callback Invocation**: The registered callback (wrapping `TaskWatcher::execute`) receives the event
-2. **Command Chaining**: Each command runs as: `cd <working_directory> && timeout 15s <command> 2>&1`
-3. **Stream Capture**: `popen()` creates a unidirectional pipe; `fgets()` reads output line-by-line
-4. **Security Controls**:
-   - 15-second timeout prevents hang conditions
-   - STDERR redirected to STDOUT (`2>&1`) for complete capture
-   - 64KB log truncation prevents memory exhaustion
-5. **Exit Code Analysis**: POSIX macros (`WIFEXITED`/`WEXITSTATUS`) determine true process state
-6. **Hook Dispatch**: `on_success` or `on_failure` hooks execute based on exit code
-7. **Session Logging**: Event data (path, timestamp, exit code, output) written to JSON log
-
-### Session Logging
-
-Each session generates a JSON log file named `{task_name}.log` containing:
-
-```json
-{
-    "task_name": "my_project",
-    "session-timestamp": "2024-01-15T14:30:00",
-    "session_log": [
-        {
-            "event_type": "modify",
-            "file_path": "/home/user/project/src/main.cpp",
-            "file_type": "file",
-            "event_mask": 8,
-            "build-command": ["g++ -Wall -o program main.cpp"],
-            "success_code": 0,
-            "terminal_msg": "Compilation successful...",
-            "timestamp": "2024-01-15T14:30:05"
-        }
-    ]
-}
+1. Initialize a new FlowHook environment in your project root
+```bash
+flowhook init
+```
+2. Add your execution bounds and build/test targets
+```bash
+flowhook add --command "make" --on-success "./run_tests" --on-failure "echo 'Fix the build!'"
+```
+3. Prevent heavy transient directories from overloading tracking tables
+```bash
+flowhook add --ignored-path "build/" --ignored-pattern "*.o"
+```
+4. Spin up the background thread filewatcher engine
+```bash
+flowhook run
 ```
 
-## Security Features
+### Global Flags
+These flags can be appended to the base flowhook command from anywhere:
 
-- **Command Timeouts**: 15-second limit prevents infinite hangs
-- **Log Truncation**: 64KB per command output prevents memory exhaustion
-- **Shell Escaping**: Commands run in isolated subshells
-- **RAII Resource Management**: File descriptors and threads cleaned up automatically
-- **Non-blocking I/O**: Event loop never blocks on file operations
+`-h`, `--help` — Displays structural help layouts and options for any command or subcommand.
 
-## Thread Safety
+`--version` — Prints the active engine version layout (0.0.0) and immediately exits.
 
-*things done to prevent race conditions when running program*
+`--verbose` — Enables verbose logging output.
 
-- `std::mutex` guards watch registry operations
-- `std::atomic<bool>` controls background thread state
-- Independent thread for event polling with joinable cleanup
-- Copy constructor deletion prevents resource duplication
+### Subcommands
 
-## Limitations (Current Version)
+*Tip: Use `flowhook --help <subcommand>` to see detailed usage and options for each subcommand.
 
-- Single event mask (`IN_CLOSE_WRITE`) supported in callback linkage
-- WatchEngine top-level orchestrator not yet implemented
-- Manual callback registration required (no automatic execution binding)
-- Linux-only (depends on inotify)
+#### 1. init
+Initializes a flowhook instance in your current directory and registers it inside a config.json file under `$HOME/.config/flowhook/config.json`.
 
-## Troubleshooting
+Usage: `flowhook init`
 
-### "inotify_add_watch failed"
-- Check file/directory permissions
-- Verify path exists and is accessible
-- Maximum inotify watches reached (check `/proc/sys/fs/inotify/max_user_watches`)
+Options: 
+  `--task TEXT`[OPTIONAL] — enables you to name your flowhook instance a unique name. If not provided the filename of your current directory will be taken as name. 
 
-### "No commands to execute"
-- Use `add-command` before calling `start`
-- Commands persist for a single session lifetime
+#### 2. add
 
-### Build fails with "nlohmann/json.hpp: No such file"
-- Install nlohmann/json library
-- Verify include path in Makefile (`-Iinclude`)
+Usage: `flowhook add [options]`
 
-## Performance Considerations
+Options:
 
-- **Event Debouncing**: Poll timeout prevents event flooding
-- **Buffer Size**: 4096-byte kernel buffer for event queue
-- **Thread Overhead**: Single background thread minimizes contention
-- **Log I/O**: JSON written only on session stop (buffered in memory)
+`--command "<cmd>"` — The base target compilation or execution string to trigger on file change.
 
-## Future Planned Enhancements
+`--on-success "<cmd>"` — Hook execution path to fork immediately if the base target command returns exit code 0.
 
-- WatchEngine class for declarative task configuration
-- Using conditional variables for polling loop instead of timeout loop to save CPU cycles
-- Configuration file loading (JSON/YAML)
+`--on-failure "<cmd>"` — Hook execution path to fork immediately if the base target command returns a non-zero exit code.
 
-## License
+`--ignored-path "<path>"` — Tells the internal filewatcher module to explicitly skip registering inotify bounds on this directory.
 
-MIT License
+`--ignored-pattern "<glob>"` — Skips filing tracking updates for files matching specific extensions (e.g., *.tmp, *.o).
+
+#### 3. list
+Dumps an immediate structural breakdown of the currently registered configuration data into your terminal.
+
+Usage: `flowhook list [options]`
+
+Flags:
+
+  `--tasks` — lists all registered tasks and their associated paths in your machine.
+  
+  `--paths` — lists all registered paths and watched paths in the working directory.
+
+  `--commands` — lists all build commands registered in the current directory.
+
+  `--ignored` — lists all ignored paths and patterns in the current directory.
+
+  `--on-success` — lists all on success commands to run in the current directory.
+
+  `--on-failure` — lists all on failure commands to run in the current directory.
+
+#### 4. remove
+Drops a specified path boundary, target match pattern, or hook configuration from the active registry.
+
+Usage: `flowhook remove [options]`
+
+Options:
+
+`-f` — Bypasses structural verification checks to force immediate state eviction.
+
+#### 5. set
+Tweaks global engine performance constants and environmental execution behaviors.
+
+Usage: `flowhook set [options]`
+
+Options:
+
+`--depth <int>` — Adjusts recursive folder watch limits. Accepts integers mapping from 0 (shallow directory tracking) up to 10.
+
+Flag:
+
+ `--active` — sets the the initialized task in the current directory as active. This enables you to watch for only tasks labeled as active later using the command `flowhook run --active`
+
+#### 6. check
+It checks for the status set by the `set` command.
+
+Usage: `flowhook check`
+Options: 
+  `--depth`  - Adjusts recursive folder watch limits.
+  `--active`  - checks if current flowhook instance in the current working directory is labeled active.
+  `--deactive`  - checks if current flowhook instance in the current working directory is labeled deactive.
+
+#### 7. run
+Spins up the underlying filewatcher background-thread, mounts native kernel inotify tracking hooks across the working directory, and starts orchestrating loops.
+
+Usage: `flowhook run`
+
+Flags:
+
+ `--quiet` — Silences non-essential lifecycle output streams, funneling thread-safe logs strictly to background buffers instead of flooding stdout.
+
+ `--all` - Runs all registered tasks across the entire machine.
+ `--active` - Runs all tasks that are labeled as active.
+
+Your complete layout is officially complete.
 
 ## Author
 
-[mnasie](https://github.com/etcoder-642) // aspiring systems engineer
+[mnasie](https://github.com/etcoder-642) | aspiring systems engineer
 
-## Used Technologies
+## Used 
 
-- Linux inotify subsystem
-- nlohmann/json library
-- POSIX pipe and process management APIs
+- [nlohmann/json library](https://github.com/nlohmann/json)
+- [CLI11 library](https://github.com/CLIUtils/CLI11)
 
 ```
