@@ -33,7 +33,7 @@ void register_run(CLI::App *app, flowhook::FlowHookCore *fh) {
     if (run_all) {
       auto r = fh->start_all();
       if (r.isErr()) {
-        std::cerr << "Failed to run all tasks: " << r.getErrMessage()
+        std::cout << "Failed to run all tasks: " << r.getErrMessage()
                   << std::endl;
         return;
       }
@@ -41,7 +41,7 @@ void register_run(CLI::App *app, flowhook::FlowHookCore *fh) {
     } else if (run_active) {
       auto r = fh->start_active();
       if (r.isErr()) {
-        std::cerr << "Failed to run active tasks: " << r.getErrMessage()
+        std::cout << "Failed to run active tasks: " << r.getErrMessage()
                   << std::endl;
         return;
       }
@@ -49,7 +49,7 @@ void register_run(CLI::App *app, flowhook::FlowHookCore *fh) {
     } else if (!run_task_id.empty()) {
       auto r = fh->start_task(run_task_id);
       if (r.isErr()) {
-        std::cerr << "Failed to run task: " << r.getErrMessage() << std::endl;
+        std::cout << "Failed to run task: " << r.getErrMessage() << std::endl;
         return;
       }
     }

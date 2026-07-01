@@ -28,10 +28,20 @@ namespace flowhook_cli {
         check->callback([=]() mutable {
           std::string check_task_id = fs::current_path().string();
 
+          if(!active && !deactive && !depth) {
+              if(!fh->is_task(check_task_id)) {
+                  std::cout << "FlowHook task has not been initialized in the current directory." << std::endl;
+                  return;
+              }else {
+                  std::cout << "FlowHook task is initialized in the current directory." << std::endl;
+                  return;
+              }
+          }
+
           if (active) {
             auto r = fh->is_task_active(check_task_id);
             if (r.isErr()) {
-              std::cerr << "Failed to check if task is active: " << r.getErrMessage()
+              std::cout << "Failed to check if task is active: " << r.getErrMessage()
                         << std::endl;
               return;
             }
@@ -44,20 +54,20 @@ namespace flowhook_cli {
           if(deactive) {
               auto r = fh->is_task_active(check_task_id);
               if (r.isErr()) {
-                std::cerr << "Failed to check if task is deactive: " << r.getErrMessage()
+                std::cout << "Failed to check if task is deactive: " << r.getErrMessage()
                           << std::endl;
                 return;
               }
               if (r.unwrap()) {
-                std::cout << "Task " << check_task_id << " is deactive" << std::endl;
-              } else {
                 std::cout << "Task " << check_task_id << " is not deactive" << std::endl;
+              } else {
+                std::cout << "Task " << check_task_id << " is deactive" << std::endl;
               }
           }
           if(depth) {
             auto r = fh->get_task_depth(check_task_id);
             if (r.isErr()) {
-              std::cerr << "Failed to check task depth: " << r.getErrMessage()
+              std::cout << "Failed to check task depth: " << r.getErrMessage()
                         << std::endl;
               return;
             }

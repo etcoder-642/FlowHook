@@ -66,14 +66,15 @@ Result<void> TaskRunner::set_depth(int num) {
   if (num > 10) {
     return Result<void>::Err(FWError::make(
         ErrorCode::INVALID_DEPTH, "Error: invalid depth set - depth too much "
-                                  "✗, use a depth between 1 and 10"));
-  } else if (num < 1) {
+                                  "✗, use a depth between 0 and 10"));
+  } else if (num < -1) {
     return Result<void>::Err(FWError::make(
         ErrorCode::INVALID_DEPTH, "Error: invalid depth set - depth set too "
-                                  "low ✗, use a depth between 1 and 10"));
+                                  "low ✗, use a depth between 0 and 10"));
   }
 
   task.watching_depth = num;
+  FW_LOG("[DEBUG] Depth set to " + std::to_string(num));
   return Result<void>::Ok();
 }
 
@@ -247,11 +248,12 @@ Result<void> TaskRunner::add_path(const string &path) {
 
   TEST(add_path_internal(path, task.watching_depth, 0));
   if (fs::is_directory(path)) {
+    task.dir_paths.push_back(path);
     FW_VERBOSE("[FLOWHOOK] Adding " + path +
                "'s children to task runner completed. ✓");
   } else
-    FW_VERBOSE("[FLOWHOOK] Adding path " + path +
-               " to task runner completed. ✓");
+    task.file_paths.push_back(path);
+  FW_VERBOSE("[FLOWHOOK] Adding path " + path + " to task runner completed. ✓");
   return Result<void>::Ok();
 }
 
@@ -267,7 +269,6 @@ Result<void> TaskRunner::add_path_internal(const string &path, int MAX_DEPTH,
   }
 
   if (fs::is_directory(path)) {
-    task.dir_paths.push_back(path);
     FW_LOG("[DEBUG] Path " + path +
            " is a directory adding child files recursively...");
     for (auto &entry : fs::directory_iterator(path)) {
@@ -291,18 +292,19 @@ Result<void> TaskRunner::add_path_internal(const string &path, int MAX_DEPTH,
         FW_LOG("[DEBUG] Adding path " + entry.path().string() +
                " to task completed. ✓");
       } else if (entry.is_directory()) {
-        if (MAX_DEPTH > CURRENT_DEPTH)
+        if (MAX_DEPTH > CURRENT_DEPTH) {
+          resolved_files.push_back(entry.path().string());
           TEST(add_path_internal(entry.path().string(), MAX_DEPTH,
                                  CURRENT_DEPTH + 1));
-        else
-          FW_LOG("[DEBUG] Path " + entry.path().string() +
-                 " is a directory. But MAX_DEPTH=" + to_string(MAX_DEPTH) +
-                 " have been reached. Child files won't be watched.");
+        } else {
+            FW_LOG("[DEBUG] Path " + entry.path().string() +
+                   " is a directory. But MAX_DEPTH=" + to_string(MAX_DEPTH) +
+                   " have been reached. Child files won't be watched.");
+        }
       }
     }
   } else if (!fs::is_directory(path)) {
     FW_LOG("[DEBUG] Path " + path + " is a file. Adding to task...");
-    task.file_paths.push_back(path);
     resolved_files.push_back(path);
     fw->add_path(path);
   }

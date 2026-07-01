@@ -44,7 +44,7 @@ void register_add(CLI::App *app, flowhook::FlowHookCore *fh) {
     if (add_n_path.empty() && add_command.empty() &&
         command_on_success.empty() && command_on_failure.empty() &&
         ignored_path.empty() && ignored_pattern.empty()) {
-      std::cerr << "Error: At least one of --path, --command, --on-success, --on-failure, --ignored-path, or --ignored-pattern is required\n"
+      std::cout << "Error: At least one of --path, --command, --on-success, --on-failure, --ignored-path, or --ignored-pattern is required\n"
                 << std::endl;
       return;
     }
@@ -52,7 +52,7 @@ void register_add(CLI::App *app, flowhook::FlowHookCore *fh) {
     if (!add_n_path.empty()) {
       auto r = fh->set_task_path(task_id, add_n_path);
       if (r.isErr()) {
-        std::cerr << "Failed to set task path: " << r.getErrMessage()
+        std::cout << "Failed to set task path: " << r.getErrMessage()
                   << std::endl;
         return;
       }
@@ -61,7 +61,7 @@ void register_add(CLI::App *app, flowhook::FlowHookCore *fh) {
     if (!add_command.empty()) {
       auto r = fh->set_task_command(task_id, add_command);
       if (r.isErr()) {
-        std::cerr << "Failed to set task command: " << r.getErrMessage()
+        std::cout << "Failed to set task command: " << r.getErrMessage()
                   << std::endl;
         return;
       }
@@ -70,7 +70,7 @@ void register_add(CLI::App *app, flowhook::FlowHookCore *fh) {
     if (!command_on_success.empty()) {
       auto r = fh->set_task_on_success(task_id, command_on_success);
       if (r.isErr()) {
-        std::cerr << "Failed to set task on success: " << r.getErrMessage()
+        std::cout << "Failed to set task on success: " << r.getErrMessage()
                   << std::endl;
         return;
       }
@@ -79,7 +79,7 @@ void register_add(CLI::App *app, flowhook::FlowHookCore *fh) {
     if (!command_on_failure.empty()) {
       auto r = fh->set_task_on_failure(task_id, command_on_failure);
       if (r.isErr()) {
-        std::cerr << "Failed to set task on failure: " << r.getErrMessage()
+        std::cout << "Failed to set task on failure: " << r.getErrMessage()
                   << std::endl;
         return;
       }
@@ -88,7 +88,7 @@ void register_add(CLI::App *app, flowhook::FlowHookCore *fh) {
     if (!ignored_path.empty()) {
       auto r = fh->set_ignored_path(task_id, ignored_path);
       if (r.isErr()) {
-        std::cerr << "Failed to set ignored path: " << r.getErrMessage()
+        std::cout << "Failed to set ignored path: " << r.getErrMessage()
                   << std::endl;
         return;
       }
@@ -97,7 +97,7 @@ void register_add(CLI::App *app, flowhook::FlowHookCore *fh) {
     if (!ignored_pattern.empty()) {
       auto r = fh->set_ignored_pattern(task_id, ignored_pattern);
       if (r.isErr()) {
-        std::cerr << "Failed to set ignored pattern: " << r.getErrMessage()
+        std::cout << "Failed to set ignored pattern: " << r.getErrMessage()
                   << std::endl;
         return;
       }

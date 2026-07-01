@@ -63,7 +63,7 @@ void register_remove(CLI::App *app, flowhook::FlowHookCore *fh) {
         }
         auto r = fh->delete_task(task_id);
         if (r.isErr()) {
-            std::cerr << "Failed to remove task: " << r.getErrMessage() << std::endl;
+            std::cout << "Failed to remove task: " << r.getErrMessage() << std::endl;
         } else {
             std::cout << "Task removed successfully." << std::endl;
         }

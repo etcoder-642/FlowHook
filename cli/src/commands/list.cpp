@@ -56,7 +56,7 @@ namespace flowhook_cli {
 
             if (list_paths) {
                 if(ts == nullptr) {
-                    std::cerr << "Error: No flowhook task found for the current directory." << std::endl;
+                    std::cout << "Error: No flowhook task found for the current directory." << std::endl;
                     return;
                 }
 
@@ -79,7 +79,7 @@ namespace flowhook_cli {
 
             if (list_commands) {
                 if(ts == nullptr) {
-                    std::cerr << "Error: No flowhook task found for the current directory." << std::endl;
+                    std::cout << "Error: No flowhook task found for the current directory." << std::endl;
                     return;
                 }
 
@@ -91,7 +91,7 @@ namespace flowhook_cli {
 
             if (list_ignored) {
                 if(ts == nullptr) {
-                    std::cerr << "Error: No flowhook task found for the current directory." << std::endl;
+                    std::cout << "Error: No flowhook task found for the current directory." << std::endl;
                     return;
                 }
 

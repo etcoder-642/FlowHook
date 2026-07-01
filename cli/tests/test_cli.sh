@@ -10,6 +10,7 @@ source ./test_init.sh
 source ./test_list.sh
 source ./test_run.sh
 source ./test_remove.sh
+source ./test_set.sh
 
 
 # -- TEST INIT --
@@ -68,6 +69,18 @@ test_remove_nonexistent_ignored_pattern_errors
 test_remove_whole_task_with_force_flag
 test_remove_whole_task_confirm_yes_deletes
 test_remove_whole_task_decline_keeps_task
+
+
+# -- TEST SET --
+
+test_set_active
+test_set_deactive
+test_set_active_then_check_not_deactive
+test_set_deactive_then_check_not_active
+test_set_depth
+test_set_depth_overwrite
+test_set_active_and_deactive_together_last_wins
+test_set_no_flags_is_noop
 
 
 echo "DEBUG config dir: $FLOWHOOK_CONFIG_DIR_TEST"

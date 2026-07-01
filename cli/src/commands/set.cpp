@@ -2,6 +2,8 @@
 #include "../include/CLI11.hpp"
 #include "../../src/include/macros.hpp"
 
+#include <climits>
+
 
 namespace fs = std::filesystem;
 
@@ -22,7 +24,7 @@ namespace flowhook_cli {
         static bool deactive = false;
         set->add_flag("--deactive", deactive, "Set a task enables active as deactive");
 
-        static int depth = 0;
+        static int depth = INT_MIN;
         set->add_option("--depth", depth, "Set the depth to watch from your working directory.");
 
         set->callback([=]() mutable {
@@ -31,7 +33,7 @@ namespace flowhook_cli {
           if (active) {
             auto r = fh->activate_task(set_task_id);
             if (r.isErr()) {
-              std::cerr << "Failed to set task as active: " << r.getErrMessage()
+              std::cout << "Failed to set task as active: " << r.getErrMessage()
                         << std::endl;
               return;
             }
@@ -40,16 +42,16 @@ namespace flowhook_cli {
           if(deactive) {
               auto r = fh->deactivate_task(set_task_id);
               if (r.isErr()) {
-                std::cerr << "Failed to set task as deactive: " << r.getErrMessage()
+                std::cout << "Failed to set task as deactive: " << r.getErrMessage()
                           << std::endl;
                 return;
               }
               std::cout << "Task " << set_task_id << " is now deactive" << std::endl;
           }
-          if(depth > 0) {
+          if(depth != INT_MIN) {
             auto r = fh->set_depth(set_task_id, depth);
             if (r.isErr()) {
-              std::cerr << "Failed to set depth: " << r.getErrMessage()
+              std::cout << "Failed to set depth: " << r.getErrMessage()
                         << std::endl;
               return;
             }
