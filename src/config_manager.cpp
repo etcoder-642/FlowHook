@@ -10,7 +10,7 @@
 
 #include "include/config_manager.h"
 #include "include/macros.hpp"
-#include "./version.h.in"
+#include "version.h"
 
 namespace fs = std::filesystem;
 using namespace nlohmann;
@@ -25,9 +25,9 @@ namespace flowhook
 
         if (override)
         {
-            return std::filesystem::path(override) / "tasks.json";
+            return std::filesystem::path(override) / "config.json";
         }
-        return std::filesystem::path(home) / ".config" / "flowhook" / "tasks.json";
+        return std::filesystem::path(home) / ".config" / "flowhook" / "config.json";
     }
 
     Result<void> ensure_config_dir()
@@ -86,7 +86,14 @@ namespace flowhook
         }
         else
         {
-            file >> config_obj;
+            try {
+                config_obj = json::parse(file);
+            }
+            catch (const json::parse_error& e)
+            {
+                return Result<void>::Err(FWError::make(
+                    ErrorCode::CONFIG_PARSE_FAILED, "Error: parsing config file failed"));
+            }
         }
 
         if (file.fail())
@@ -101,7 +108,7 @@ namespace flowhook
     {
         Task _task;
         _task.name = json_task.at("task_name");
-        _task.working_directory = json_task.at("working_directory");
+        _task.id = json_task.at("working_directory");
 
         vector<string> _commands;
         for (auto &cmd : json_task.at("commands"))
@@ -110,12 +117,19 @@ namespace flowhook
         }
         _task.commands = _commands;
 
-        vector<string> _paths;
-        for (auto &cmd : json_task.at("paths"))
+        vector<string> _file_paths;
+        for (auto &cmd : json_task.at("file_paths"))
         {
-            _paths.push_back(cmd);
+            _file_paths.push_back(cmd);
         }
-        _task.paths = _paths;
+        _task.file_paths = _file_paths;
+
+        vector<string> _dir_paths;
+        for (auto &cmd : json_task.at("dir_paths"))
+        {
+            _dir_paths.push_back(cmd);
+        }
+        _task.dir_paths = _dir_paths;
 
         vector<string> _on_success;
         for (auto &cmd : json_task.at("on_success"))
@@ -130,7 +144,23 @@ namespace flowhook
             _on_failure.push_back(cmd);
         }
         _task.on_failure = _on_failure;
+
+        vector<string> _ignored_paths;
+        for (auto &path : json_task.at("ignored_paths"))
+        {
+            _ignored_paths.push_back(path);
+        }
+        _task.ignored_paths = _ignored_paths;
+
+        vector<string> _ignored_patterns;
+        for (auto &pattern : json_task.at("ignored_patterns"))
+        {
+            _ignored_patterns.push_back(pattern);
+        }
+        _task.ignored_patterns = _ignored_patterns;
+
         _task.isActive = json_task.at("isActive");
+        _task.watching_depth = json_task.at("watching_depth");
         return Result<Task>::Ok(_task);
     }
 
@@ -138,17 +168,24 @@ namespace flowhook
     {
         json _json_task = json::object();
         _json_task["task_name"] = task.name;
-        _json_task["working_directory"] = task.working_directory;
+        _json_task["working_directory"] = task.id;
         _json_task["commands"] = json::array();
         for (auto &cmd : task.commands)
         {
             _json_task["commands"].push_back(cmd);
         }
-        _json_task["paths"] = json::array();
-        for (auto &path : task.paths)
+        _json_task["file_paths"] = json::array();
+        for (auto &path : task.file_paths)
         {
-            _json_task["paths"].push_back(path);
+            _json_task["file_paths"].push_back(path);
         }
+
+        _json_task["dir_paths"] = json::array();
+        for (auto &path : task.dir_paths)
+        {
+            _json_task["dir_paths"].push_back(path);
+        }
+
         _json_task["on_success"] = json::array();
         for (auto &cmd : task.on_success)
         {
@@ -159,7 +196,16 @@ namespace flowhook
         {
             _json_task["on_failure"].push_back(cmd);
         }
+        for (auto &path : task.ignored_paths)
+        {
+            _json_task["ignored_paths"].push_back(path);
+        }
+        for (auto &pattern : task.ignored_patterns)
+        {
+            _json_task["ignored_patterns"].push_back(pattern);
+        }
         _json_task["isActive"] = task.isActive;
+        _json_task["watching_depth"] = task.watching_depth;
         return Result<json>::Ok(_json_task);
     }
 
@@ -197,6 +243,8 @@ namespace flowhook
             {
                 json _json_task = TRY(convert_task_to_json(task), void);
                 *it = _json_task;
+                isflushed = false;
+                flush();
                 return Result<void>::Ok();
             }
         }
@@ -246,12 +294,16 @@ namespace flowhook
         {
             Task _task;
             _task.name = it->at("task_name");
-            _task.working_directory = it->at("working_directory");
+            _task.id = it->at("working_directory");
             _task.commands = it->at("commands");
-            _task.paths = it->at("paths");
+            _task.file_paths = it->at("file_paths");
+            _task.dir_paths = it->at("dir_paths");
             _task.on_success = it->at("on_success");
             _task.on_failure = it->at("on_failure");
+            _task.ignored_paths = it->at("ignored_paths");
+            _task.ignored_patterns = it->at("ignored_patterns");
             _task.isActive = it->at("isActive");
+            _task.watching_depth = it->at("watching_depth");
             tasks.push_back(_task);
         }
         return Result<vector<Task>>::Ok(tasks);

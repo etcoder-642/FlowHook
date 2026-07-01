@@ -8,6 +8,7 @@
 #include <filesystem>
 
 #include "include/session_logger.h"
+#include "error/error.h"
 #include "include/macros.hpp"
 
 namespace fs = std::filesystem;
@@ -16,45 +17,50 @@ using namespace std;
 namespace flowhook
 {
 
-    SessionLogger::SessionLogger()
+    Result<SessionLogger*> SessionLogger::create(const string &path)
     {
-        is_running = false;
-        flushed = false;
+        FW_LOG("[DEBUG] Creating session logger ...");
+        auto logger = new SessionLogger();
+        TEST_OVERLOADED(logger->init(path), SessionLogger*);
+        FW_LOG("[DEBUG] Session logger created successfully. ✓");
+        return Result<SessionLogger*>::Ok(logger);
+    }
+
+    Result<void> SessionLogger::init(const string &path)
+    {
+        // check if file path is empty
+        if (path.empty())
+        {
+            return Result<void>::Err(FWError::make(
+                ErrorCode::EMPTY_VALUE, "Error: file path is empty " + path + ". ✗"));
+        }
+        file_path = path;
+        FW_LOG("[DEBUG] Log file path set to: " + file_path);
+        return Result<void>::Ok();
     }
 
     SessionLogger::~SessionLogger()
     {
-        auto _temp = stop();
+        FW_LOG("[DEBUG] Session logger destroyed.");
+        stop();
     }
 
-    Result<void> SessionLogger::start(const string &file_path)
+    Result<void> SessionLogger::start()
     {
-        // check if session logger is already running
         if (is_running)
         {
-            return Result<void>::Err(FWError::make(
-                ErrorCode::SESSION_LOGGER_ALREADY_RUNNING, "Error: session logger already running"));
+            return Result<void>::Ok(); // idempotent
         }
-        // check if file path is empty
-        if (file_path.empty())
-        {
-            return Result<void>::Err(FWError::make(
-                ErrorCode::EMPTY_VALUE, "Error: file path is empty"));
-        }
-        // check if file path is a valid path
-        if (!fs::exists(file_path))
-        {
-            return Result<void>::Err(FWError::make(
-                ErrorCode::PATH_NOT_FOUND, "Error: file path not found"));
-        }
-        string _file_name = file_path + ".log";
-        file.open(_file_name, ios::out | ios::app);
+
+        FW_LOG("[DEBUG] Starting a new log session ...");
+        file.open(file_path, ios::out | ios::app);
         if (!file.is_open())
         {
             return Result<void>::Err(FWError::make(
-                ErrorCode::SYS_IO_FAILED, "Error: opening log file"));
+                ErrorCode::SYS_IO_FAILED, "Error: opening log file " + file_path + ". ✗"));
         }
-        session["task_name"] = file_path;
+        session["task_name"] = fs::path(file_path).filename().string();
+        session["working_directory"] = fs::path(file_path).parent_path().string();
 
         auto now = std::chrono::system_clock::now();
         std::time_t now_time = std::chrono::system_clock::to_time_t(now);
@@ -66,15 +72,21 @@ namespace flowhook
         flushed = false;
         is_running = true;
 
+        FW_LOG("[DEBUG] Log session started successfully.");
         return Result<void>::Ok();
     }
 
     Result<void> SessionLogger::log_execution(const ExecutionResult &execution_result)
     {
+        if(!is_running)
+        {
+            return Result<void>::Err(FWError::make(
+                ErrorCode::SESSION_LOGGER_NOT_RUNNING, "Error: session logger not initialized. ✗"));
+        }
         if (session.empty())
         {
             return Result<void>::Err(FWError::make(
-                ErrorCode::SESSION_LOGGER_NOT_RUNNING, "Error: session logger not initialized"));
+                ErrorCode::SESSION_LOGGER_NOT_RUNNING, "Error: session logger not initialized. ✗"));
         }
         WatchEvent e = execution_result._event;
         string terminal_msg = execution_result.log;
@@ -109,25 +121,27 @@ namespace flowhook
             event["timestamp"] = ss.str();
 
             session["session_log"].push_back(event);
-            return Result<void>::Ok();
+
+            FW_LOG("[DEBUG] An execution result logged successfully. ✓");
         }
         catch (const std::bad_alloc &e)
         {
             return Result<void>::Err(FWError::make(
-                ErrorCode::SYS_ALLOC_FAILED, "Error: allocating memory for build-command"));
+                ErrorCode::SYS_ALLOC_FAILED, "Error: bad alloc error caught. ✗"));
         }
-    }
+        return Result<void>::Ok();
+}
 
     Result<void> SessionLogger::stop()
     {
         if (!is_running)
         {
-            return Result<void>::Err(FWError::make(ErrorCode::SESSION_LOGGER_NOT_RUNNING, "Error: session logger not running"));
+            return Result<void>::Ok(); // idempotent
         }
 
         if (!file.is_open())
         {
-            return Result<void>::Err(FWError::make(ErrorCode::SYS_IO_FAILED, "Error: couldn't open session logger file"));
+            return Result<void>::Err(FWError::make(ErrorCode::SYS_IO_FAILED, "Error: couldn't open session logger file. ✗"));
         }
 
         if (!flushed)
@@ -139,22 +153,23 @@ namespace flowhook
             catch (const std::bad_alloc &e)
             {
                 return Result<void>::Err(FWError::make(
-                    ErrorCode::SYS_ALLOC_FAILED, "Error: allocating memory for session log failed"));
+                    ErrorCode::SYS_ALLOC_FAILED, "Error: allocating memory for session log failed. ✗"));
             }
             if (file.fail())
             {
                 return Result<void>::Err(FWError::make(
-                    ErrorCode::SYS_IO_FAILED, "Error: writing to session log failed"));
+                    ErrorCode::SYS_IO_FAILED, "Error: writing to session log failed. ✗"));
             }
             file.close();
             if (file.fail())
             {
                 return Result<void>::Err(FWError::make(
-                    ErrorCode::SYS_IO_FAILED, "Error: closing session log failed"));
+                    ErrorCode::SYS_IO_FAILED, "Error: closing session log failed. ✗"));
             }
             is_running = false;
             flushed = true;
         }
+        FW_LOG("[DEBUG] Log session stopped successfully. ✓");
         return Result<void>::Ok();
     }
 }

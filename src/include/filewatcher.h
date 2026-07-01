@@ -7,17 +7,14 @@
 #include <sys/inotify.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <errno.h>
 #include <poll.h>
 
 #include <unordered_map>
 #include <thread>
-#include <stdexcept>
 #include <mutex>
 #include <atomic>
 
 #include "error/result.h"
-#include "error/error.h"
 #include "types.h"
 
 namespace flowhook
@@ -29,6 +26,7 @@ namespace flowhook
         int poll_num;
         std::unordered_map<int, std::string> watch_registry;
         std::unordered_map<std::string, int> r_watch_registry;
+
         struct pollfd fd[1];
         nfds_t nfds;
 
@@ -38,6 +36,7 @@ namespace flowhook
         std::mutex registry_mutex;
         std::atomic<bool> isWatching{false};
         std::thread background_thread;
+
 
         Result<WatchEvent> handle_events(int fd, std::vector<int> wd, int argc);
         Result<void> event_loop(int timeout);
@@ -63,6 +62,8 @@ namespace flowhook
 
         Result<void> add_path(const std::string &arg);
         Result<void> remove_path(const std::string &arg);
+
+
         Result<void> start(int timeout);
         Result<void> stop();
 

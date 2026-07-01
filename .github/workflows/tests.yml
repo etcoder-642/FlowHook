@@ -1,34 +1,42 @@
 name: Tests
 
 on:
-  push:
-    branches: [tests, core, main]
-  pull_request:
-    branches: [main]
+    push:
+        branches: [dev, main, test/all]
+    pull_request:
+        branches: [main]
 
 jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
+    build-and-test:
+        runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+        steps:
+            - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake ninja-build
+            - name: Install dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y cmake ninja-build
 
-      - name: Install vcpkg
-        run: |
-          git clone https://github.com/microsoft/vcpkg.git
-          ./vcpkg/bootstrap-vcpkg.sh
-          echo "VCPKG_ROOT=$PWD/vcpkg" >> $GITHUB_ENV
+            - name: Install vcpkg
+              run: |
+                  git clone https://github.com/microsoft/vcpkg.git
+                  ./vcpkg/bootstrap-vcpkg.sh
+                  echo "VCPKG_ROOT=$PWD/vcpkg" >> $GITHUB_ENV
 
-      - name: Configure
-        run: cmake -B build -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
+            - name: Configure
+              run: cmake -B build -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
 
-      - name: Build
-        run: cmake --build build
+            - name: Build
+              run: cmake --build build
 
-      - name: Run tests
-        run: ctest --test-dir build --output-on-failure
+            - name: Run tests
+              run: cd build && ./test_config_manager && ./test_task_runner && ./test_session_logger && ./test_flowhook_core
+
+            - name: Install flowhook binary
+              run: |
+                  sudo cmake --install build
+                  which flowhook || echo "flowhook not found after install"
+
+            - name: Run CLI tests
+              run: bash cli/tests/test_cli.sh

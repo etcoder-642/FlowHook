@@ -23,6 +23,7 @@ namespace flowhook
         PATH_NOT_FOUND,
         PATH_ALREADY_EXISTS,
         CONFIG_FILE_EMPTY,
+        CONFIG_PARSE_FAILED,
 
         EVENT_NOT_FOUND,
         EVENT_NOT_SUPPORTED,
@@ -52,6 +53,8 @@ namespace flowhook
         SYS_ALLOC_FAILED,
 
         EMPTY_VALUE,
+        VALUE_NOT_FOUND,
+        INVALID_DEPTH,
 
         UNKNOWN
     };
@@ -69,7 +72,7 @@ namespace flowhook
         std::string message;
 
         std::vector<StackFrame> stackTrace;
-        
+
         FWError(ErrorCode code, std::string message) : code(code), message(message) {}
 
         void pushFrame(const std::source_location &loc)

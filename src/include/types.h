@@ -30,7 +30,7 @@ namespace flowhook
         TaskRunner *ptr;
         Result<void> (TaskRunner::*handler)(const WatchEvent &e) = nullptr;
         Result<void> (*raw_callback)(const WatchEvent &e) = nullptr;
-        
+
         static WatchCallback from_raw(Result<void> (*fn)(const WatchEvent &e))
         {
             WatchCallback cb;
@@ -64,19 +64,25 @@ namespace flowhook
 
     struct Task
     {
-        std::string name = "";
-        std::string working_directory = "";
+        std::string id = ""; // this is a name that will be used internally and always unique, not assigned by the user. Mostly the absolute path of the cwd
+        std::string name = ""; // user assigned name can be duplicated, defaults to the filename of the cwd
+        int watching_depth = 3;
         std::vector<std::string> commands = {};
-        std::vector<std::string> paths = {};
+        std::vector<std::string> file_paths = {};
+        std::vector<std::string> dir_paths = {};
 
         std::vector<std::string> on_success = {};
         std::vector<std::string> on_failure = {};
+
+        std::vector<std::string> ignored_patterns = {};
+        std::vector<std::string> ignored_paths = {};
         bool isActive = false;
         bool isRunning = false;
 
         bool isNull() const {
-            return name.empty() && working_directory.empty() && commands.empty() && paths.empty() &&
-                on_success.empty() && on_failure.empty() && !isActive && !isRunning;
+            return id.empty() && name.empty() && commands.empty() && file_paths.empty() && dir_paths.empty() &&
+                on_success.empty() && on_failure.empty() && !isActive && !isRunning && watching_depth == 3 &&
+                ignored_paths.empty() && ignored_patterns.empty();
         }
     };
 

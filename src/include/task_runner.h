@@ -1,8 +1,8 @@
 #pragma once
 
-#include <iostream>
 #include <vector>
 #include <string>
+#include <chrono>
 
 #include "types.h"
 #include "filewatcher.h"
@@ -19,24 +19,35 @@ namespace flowhook
         Task task;
         std::vector<WatchCallback> callbacks;
 
+        std::chrono::steady_clock::time_point last_executed;
+        std::chrono::milliseconds cooldown_ms{500};
+
         bool flushed;
         bool is_init = false;
         int execution_id = 0;
+        std::vector<std::string> resolved_files;
 
         TaskRunner() = default;
         Result<void> init(const std::string &task_name, const std::string &working_directory);
+        Result<void> add_path_internal(const std::string &path, int MAX_DEPTH, int CURRENT_DEPTH);
+        bool check_path_existence(const std::string &path);
     public:
         static Result<TaskRunner*> create(const std::string &task_name, const std::string &working_directory);
         ~TaskRunner();
 
         std::string get_task_name() const { return task.name; }
-        std::string get_working_directory() const { return task.working_directory; }
+        std::string get_task_id() const { return task.id; }
         Task get_task() const { return task; }
+        std::vector<std::string> get_resolved_files() const { return resolved_files; }
+
+
+        bool isIgnored(const std::string &path);
 
         bool is_active() const { return task.isActive; }
         void activate() { task.isActive = true; }
         void deactivate() { task.isActive = false; }
         bool is_running() const { return task.isRunning; }
+        Result<void> set_depth(int num);
 
         Result<void> change_task_name(const std::string &task_name);
         Result<void> change_working_directory(const std::string &working_directory);
@@ -52,8 +63,15 @@ namespace flowhook
         Result<void> add_path(const std::string &path);
         Result<void> delete_path(const std::string &path);
 
+        Result<void> add_ignored_path(const std::string &path);
+        Result<void> add_ignored_pattern(const std::string &pattern);
+        Result<void> remove_ignored_path(const std::string &path);
+        Result<void> remove_ignored_pattern(const std::string &pattern);
+
         Result<void> add_callback(const WatchCallback &callback);
         Result<void> delete_callback(const WatchCallback &callback);
+
+        Result<std::vector<std::string>> get_watch_list();
 
         Result<void> execute(const WatchEvent &e);
         Result<void> start();
