@@ -9,6 +9,11 @@ namespace fs = std::filesystem;
 using namespace flowhook;
 using namespace std;
 
+bool FLOWHOOK_DEBUG = false;
+bool FLOWHOOK_VERBOSE = false;
+bool FLOWHOOK_QUIET = false;
+
+
 // ---------------------------------------------------------------------------
 // Callbacks
 // ---------------------------------------------------------------------------

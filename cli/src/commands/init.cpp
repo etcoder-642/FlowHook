@@ -30,12 +30,12 @@ namespace flowhook_cli {
 
           auto r = fh->create_task(task_name, n_path);
           if (r.isErr()) {
-            std::cerr << "Failed to create task: " << r.getErrMessage() << std::endl;
+            std::cout << "Failed to create task: " << r.getErrMessage() << std::endl;
             return;
           }
           auto p = fh->set_task_path(n_path, n_path);
           if (p.isErr()) {
-            std::cerr << "Failed to set task path: " << p.getErrMessage() << std::endl;
+            std::cout << "Failed to set task path: " << p.getErrMessage() << std::endl;
             return;
           }
 

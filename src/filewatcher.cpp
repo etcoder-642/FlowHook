@@ -109,6 +109,14 @@ Result<WatchEvent> FileWatcher::handle_events(int fd, vector<int> wd,
 
 Result<void> FileWatcher::add_path(const string &arg) {
   lock_guard<mutex> lock(registry_mutex);
+  for(auto [wd, path]: watch_registry)
+  {
+      if(path == arg){
+          return Result<void>::Err(
+              ErrorCode::PATH_ALREADY_EXISTS,
+              "Error: path " + arg + " already exists ✗");
+      }
+  }
   int wd = inotify_add_watch(inotify_fd, arg.c_str(),
                              IN_MOVED_TO | IN_MOVED_FROM | IN_MODIFY |
                                  IN_CLOSE_WRITE);
@@ -125,10 +133,6 @@ Result<void> FileWatcher::add_path(const string &arg) {
 
 Result<void> FileWatcher::remove_path(const string &arg) {
   lock_guard<mutex> lock(registry_mutex);
-  return remove_path_internal(arg);
-}
-
-Result<void> FileWatcher::remove_path_internal(const string &arg) {
   // check if path exists
   bool path_exists = false;
   for (auto [w, p] : watch_registry) {

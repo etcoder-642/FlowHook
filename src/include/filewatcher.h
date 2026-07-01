@@ -61,11 +61,8 @@ namespace flowhook
         bool is_running() const { return isWatching; }
 
         Result<void> add_path(const std::string &arg);
-        Result<void> add_path_internal(const std::string &arg, int MAX_DEPTH, int CURRENT_DEPTH);
         Result<void> remove_path(const std::string &arg);
-        Result<void> remove_path_internal(const std::string &arg);
 
-        bool isIgnored(const std::string &path);
 
         Result<void> start(int timeout);
         Result<void> stop();

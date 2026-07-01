@@ -46,54 +46,63 @@ namespace flowhook_cli {
 
 
             if (list_tasks) {
-                std::cout << "All registered Tasks:\n" << std::endl;
+                std::cout << "\nAll registered Tasks:\n" << std::endl;
                 for (const auto& task : tasks) {
-                    std::cout << "Name: " << task.name << std::endl;
-                    std::cout << "Working Directory: " << task.id << "\n" << std::endl;
+                    std::cout << " Name: " << task.name << std::endl;
+                    std::cout << " Working Directory: " << task.id << "\n" << std::endl;
                 }
             }
 
 
             if (list_paths) {
                 if(ts == nullptr) {
-                    std::cerr << "Error: No flowhook task found for the current directory." << std::endl;
+                    std::cout << "Error: No flowhook task found for the current directory." << std::endl;
                     return;
                 }
 
-                std::cout << "Paths:\n" << std::endl;
-                for(const auto& path : ts->paths) {
-                    std::cout << path << std::endl;
+                std::cout << "\nWatched Directories:\n" << std::endl;
+                for(const auto& path : ts->dir_paths) {
+                    std::cout << " " << path << std::endl;
                 }
+
+                std::cout << "\nStandalone File:\n" << std::endl;
+                for(const auto& path : ts->file_paths) {
+                    std::cout << " " << path << std::endl;
+                }
+
+                std::cout << "All Currently Watched Files:\n" << std::endl;
+                for(const auto& path : fh->get_resolved_files(ts->id)) {
+                    std::cout << " " << path << std::endl;
+                }
+
             }
 
             if (list_commands) {
                 if(ts == nullptr) {
-                    std::cerr << "Error: No flowhook task found for the current directory." << std::endl;
+                    std::cout << "Error: No flowhook task found for the current directory." << std::endl;
                     return;
                 }
 
-                std::cout << "Commands:\n" << std::endl;
+                std::cout << "\nCommands:\n" << std::endl;
                 for(const auto& command : ts->commands) {
-                    std::cout << command << std::endl;
+                    std::cout << " " << command << std::endl;
                 }
             }
 
             if (list_ignored) {
                 if(ts == nullptr) {
-                    std::cerr << "Error: No flowhook task found for the current directory." << std::endl;
+                    std::cout << "Error: No flowhook task found for the current directory." << std::endl;
                     return;
                 }
 
-                std::cout << "Ignored paths:\n" << std::endl;
+                std::cout << "\nIgnored paths:\n" << std::endl;
                 for(const auto& ignored_paths : ts->ignored_paths) {
-                    std::cout << ignored_paths << std::endl;
+                    std::cout << " " << ignored_paths << std::endl;
                 }
-                std::cout << std::endl;
-                std::cout << "Ignored patterns:\n" << std::endl;
+                std::cout << "\nIgnored patterns:\n" << std::endl;
                 for(const auto& ignored_pattern : ts->ignored_patterns) {
-                    std::cout << ignored_pattern << std::endl;
+                    std::cout << " " << ignored_pattern << std::endl;
                 }
-                std::cout << std::endl;
             }
 
             if (list_on_success) {
@@ -102,9 +111,9 @@ namespace flowhook_cli {
                     return;
                 }
 
-                std::cout << "On success:\n" << std::endl;
+                std::cout << "\nOn success:\n" << std::endl;
                 for(const auto& command : ts->on_success) {
-                    std::cout << command << std::endl;
+                    std::cout << " " << command << std::endl;
                 }
                 std::cout << std::endl;
             }
@@ -115,9 +124,9 @@ namespace flowhook_cli {
                     return;
                 }
 
-                std::cout << "On failure:\n" << std::endl;
+                std::cout << "\nOn failure:\n" << std::endl;
                 for(const auto& command : ts->on_failure) {
-                    std::cout << command << std::endl;
+                    std::cout << " " << command << std::endl;
                 }
                 std::cout << std::endl;
             }

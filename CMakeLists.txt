@@ -51,9 +51,16 @@ add_executable(flowhook_cli cli/src/main.cpp
                             cli/src/commands/run.cpp
                             cli/src/commands/init.cpp
                             cli/src/commands/list.cpp
-                            cli/src/commands/remove.cpp)
+                            cli/src/commands/remove.cpp
+                            cli/src/commands/set.cpp
+                            cli/src/commands/check.cpp)
 target_link_libraries(flowhook_cli PRIVATE flowhook_lib)
 target_include_directories(flowhook_cli PRIVATE cli/src)
+
+install(TARGETS flowhook_cli DESTINATION bin)
+install(PROGRAMS $<TARGET_FILE:flowhook_cli>
+    DESTINATION bin
+    RENAME flowhook)
 
 enable_testing()
 add_test(NAME flowhook_filewatcher_tests COMMAND test_filewatcher)

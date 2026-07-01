@@ -38,7 +38,7 @@ Result<void> TaskRunner::init(const string &task_name,
                                        working_directory + ". ✗"));
   }
 
-  string file_name = task_name + ".log";
+  string file_name = task_name + "-flowhook.log";
   fs::path _file_path = fs::path(working_directory) / file_name;
   sl = TRY(SessionLogger::create(_file_path.string()), void);
 
@@ -63,17 +63,18 @@ TaskRunner::~TaskRunner() {
 }
 
 Result<void> TaskRunner::set_depth(int num) {
-  if (num > 6) {
-    return Result<void>::Err(
-        FWError::make(ErrorCode::INVALID_DEPTH,
-                      "Error: invalid depth set - depth too much ✗"));
-  } else if (num < 1) {
-    return Result<void>::Err(
-        FWError::make(ErrorCode::INVALID_DEPTH,
-                      "Error: invalid depth set - depth set too low ✗"));
+  if (num > 10) {
+    return Result<void>::Err(FWError::make(
+        ErrorCode::INVALID_DEPTH, "Error: invalid depth set - depth too much "
+                                  "✗, use a depth between 0 and 10"));
+  } else if (num < -1) {
+    return Result<void>::Err(FWError::make(
+        ErrorCode::INVALID_DEPTH, "Error: invalid depth set - depth set too "
+                                  "low ✗, use a depth between 0 and 10"));
   }
 
   task.watching_depth = num;
+  FW_LOG("[DEBUG] Depth set to " + std::to_string(num));
   return Result<void>::Ok();
 }
 
@@ -117,14 +118,16 @@ TaskRunner::change_working_directory(const string &working_directory) {
 }
 
 bool TaskRunner::isIgnored(const string &path) {
+  string filename = fs::path(path).filename().string();
   for (auto &p : task.ignored_paths) {
-    if (p == path)
+    if (p == path || p == filename)
       return true;
   }
 
-  string filename = fs::path(path).filename().string();
   for (auto &p : task.ignored_patterns) {
     if (fnmatch(p.c_str(), filename.c_str(), 0) == 0)
+      return true;
+    if (fnmatch(p.c_str(), path.c_str(), 0) == 0)
       return true;
   }
   return false;
@@ -142,8 +145,7 @@ Result<void> TaskRunner::add_ignored_path(const string &path) {
     }
   }
   task.ignored_paths.push_back(path);
-  FW_LOG("[DEBUG] Adding ignored path " + path +
-         " to Task completed. ✓");
+  FW_LOG("[DEBUG] Adding ignored path " + path + " to Task completed. ✓");
   return Result<void>::Ok();
 }
 
@@ -159,8 +161,7 @@ Result<void> TaskRunner::add_ignored_pattern(const string &pattern) {
     }
   }
   task.ignored_patterns.push_back(pattern);
-  FW_LOG("[DEBUG] Adding ignored pattern " + pattern +
-         " to Task completed. ✓");
+  FW_LOG("[DEBUG] Adding ignored pattern " + pattern + " to Task completed. ✓");
   return Result<void>::Ok();
 }
 
@@ -222,18 +223,48 @@ Result<void> TaskRunner::delete_command(const string &command) {
       FWError::make(ErrorCode::COMMAND_NOT_FOUND, "Error: command not found"));
 }
 
-Result<void> TaskRunner::add_path(const string &path, int MAX_DEPTH) {
-  TEST(add_path_internal(path, MAX_DEPTH, 0));
-  if(fs::is_directory(path))
-  {
-      FW_VERBOSE("[FLOWHOOK] Adding " + path + "'s children to task runner completed. ✓");
+bool TaskRunner::check_path_existence(const string &path) {
+  for (auto &p : task.file_paths) {
+    if (p == path) {
+      return true;
+    }
+  }
+  for (auto &p : task.dir_paths) {
+    if (p == path) {
+      return true;
+    }
+  }
+  return false;
+}
+
+Result<void> TaskRunner::add_path(const string &path) {
+  if (check_path_existence(path))
+    return Result<void>::Ok(); // idempotent
+  if (!fs::exists(path)) {
+    return Result<void>::Err(
+        FWError::make(ErrorCode::PATH_NOT_FOUND,
+                      "Error: provided path " + path + " does not exist! ✗ \n // use the `flowhook remove --path <path>` command to remove it from the task"));
+  }
+  if (isIgnored(path)) {
+    FW_LOG("[DEBUG] Path " + path + " matches ignored paths and patterns.");
+    return Result<void>::Ok();
+  }
+
+  TEST(add_path_internal(path, task.watching_depth, 0));
+  if (fs::is_directory(path)) {
+    task.dir_paths.push_back(path);
+    FW_VERBOSE("[FLOWHOOK] Adding " + path +
+               "'s children to task runner completed. ✓");
   } else
-      FW_VERBOSE("[FLOWHOOK] Adding path " + path + " to task runner completed. ✓");
+    task.file_paths.push_back(path);
+  FW_VERBOSE("[FLOWHOOK] Adding path " + path + " to task runner completed. ✓");
   return Result<void>::Ok();
 }
 
 Result<void> TaskRunner::add_path_internal(const string &path, int MAX_DEPTH,
                                            int CURRENT_DEPTH) {
+  if (check_path_existence(path))
+    return Result<void>::Ok(); // idempotent
   // if path is directory add each files inside it iteratively
   if (isIgnored(path)) {
     FW_LOG("[DEBUG] Path " + path + " matches ignored paths and patterns.");
@@ -245,53 +276,71 @@ Result<void> TaskRunner::add_path_internal(const string &path, int MAX_DEPTH,
     FW_LOG("[DEBUG] Path " + path +
            " is a directory adding child files recursively...");
     for (auto &entry : fs::directory_iterator(path)) {
+      if (isIgnored(entry.path().string())) {
+        FW_LOG("[DEBUG] Path " + entry.path().string() +
+               " matches ignored patterns.");
+        FW_LOG("[DEBUG] Adding Path " + entry.path().string() +
+               " to task failed. ✗");
+        continue;
+      }
+
       if (entry.is_regular_file()) {
         FW_LOG("[DEBUG] Adding path " + entry.path().string() +
                " to filewatcher...");
-        FW_LOG("[DEBUG] Checking if Path " + entry.path().string() +
+        FW_LOG("[DEBUG] Checking if resolved file path " +
+               entry.path().string() +
                " matches ignored paths and patterns ...");
 
-        if (isIgnored(entry.path().string())) {
-          FW_LOG("[DEBUG] Path " + entry.path().string() +
-                 " matches ignored patterns.");
-          FW_LOG("[DEBUG] Adding Path " + entry.path().string() +
-                 " to task failed. ✗");
-          continue;
-        }
-        task.paths.push_back(entry.path().string());
+        resolved_files.push_back(entry.path().string());
         fw->add_path(entry.path().string());
 
         FW_LOG("[DEBUG] Adding path " + entry.path().string() +
                " to task completed. ✓");
       } else if (entry.is_directory()) {
-        if (MAX_DEPTH > CURRENT_DEPTH)
-          TEST(add_path_internal(entry.path(), MAX_DEPTH, CURRENT_DEPTH + 1));
-        else
+        if (MAX_DEPTH > CURRENT_DEPTH) {
+          resolved_files.push_back(entry.path().string());
+          TEST(add_path_internal(entry.path().string(), MAX_DEPTH,
+                                 CURRENT_DEPTH + 1));
+        } else {
           FW_LOG("[DEBUG] Path " + entry.path().string() +
                  " is a directory. But MAX_DEPTH=" + to_string(MAX_DEPTH) +
                  " have been reached. Child files won't be watched.");
+        }
       }
     }
-  }
-  else if (!fs::is_directory(path)) {
+  } else if (!fs::is_directory(path)) {
     FW_LOG("[DEBUG] Path " + path + " is a file. Adding to task...");
-    task.paths.push_back(path);
+    resolved_files.push_back(path);
     fw->add_path(path);
   }
   return Result<void>::Ok();
 }
 
-
 Result<void> TaskRunner::delete_path(const string &path) {
-  for (auto it = task.paths.begin(); it != task.paths.end(); it++) {
-    if (*it == path) {
-      task.paths.erase(it);
-      return Result<void>::Ok();
+  if (!fs::exists(path)) {
+    return Result<void>::Err(
+        FWError::make(ErrorCode::PATH_NOT_FOUND,
+                      "Error: provided path " + path + " does not exist! ✗"));
+  }
+
+  if (!fs::is_directory(path)) {
+    for (auto it = task.file_paths.begin(); it != task.file_paths.end(); it++) {
+      if (*it == path) {
+        task.file_paths.erase(it);
+        return Result<void>::Ok();
+      }
+    }
+  } else {
+    for (auto it = task.dir_paths.begin(); it != task.dir_paths.end(); it++) {
+      if (*it == path) {
+        task.dir_paths.erase(it);
+        return Result<void>::Ok();
+      }
     }
   }
   TEST(fw->remove_path(path));
   return Result<void>::Err(
-      FWError::make(ErrorCode::EVENT_NOT_FOUND, "Error: path not found"));
+      FWError::make(ErrorCode::PATH_NOT_FOUND, "Error: path not found"));
 }
 
 Result<void> TaskRunner::add_on_success(const string &command) {
@@ -472,8 +521,7 @@ Result<void> TaskRunner::delete_callback(const WatchCallback &callback) {
 Result<void> TaskRunner::start() {
   FW_LOG("[DEBUG] Starting TaskRunner...");
   if (task.isRunning) {
-    return Result<void>::Err(FWError::make(
-        ErrorCode::TASK_ALREADY_RUNNING, "Error: task runner already running"));
+    return Result<void>::Ok(); // idempotent
   }
   task.isRunning = true;
 

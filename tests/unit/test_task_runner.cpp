@@ -10,6 +10,11 @@ namespace fs = std::filesystem;
 using namespace flowhook;
 using namespace std;
 
+bool FLOWHOOK_DEBUG = false;
+bool FLOWHOOK_VERBOSE = false;
+bool FLOWHOOK_QUIET = false;
+
+
 // ---------------------------------------------------------------------------
 // Callbacks
 // ---------------------------------------------------------------------------
@@ -106,10 +111,6 @@ UTEST_F(TaskRunnerFixture, add_command)
 {
     auto r = utest_fixture->tr->add_command("ls");
     EXPECT_TRUE(r.isOk());
-    if(r.isErr())
-    {
-        cerr << r.unwrapErr().message << endl;
-    }
 }
 UTEST_F(TaskRunnerFixture, add_command_twice)
 {
@@ -152,7 +153,7 @@ UTEST_F(TaskRunnerFixture, add_path)
 UTEST_F(TaskRunnerFixture, add_path_twice)
 {
     ASSERT_TRUE(utest_fixture->tr->add_path("/tmp/tr_test").isOk());
-    EXPECT_TRUE(utest_fixture->tr->add_path("/tmp/tr_test").isErr());
+    EXPECT_TRUE(utest_fixture->tr->add_path("/tmp/tr_test").isOk()); // idempotent
 }
 UTEST_F(TaskRunnerFixture, add_path_empty)
 {
@@ -175,7 +176,8 @@ UTEST_F(TaskRunnerFixture, add_path_file)
 UTEST_F(TaskRunnerFixture, delete_path)
 {
     ASSERT_TRUE(utest_fixture->tr->add_path("/tmp/tr_test").isOk());
-    EXPECT_TRUE(utest_fixture->tr->delete_path("/tmp/tr_test").isOk());
+    auto result = utest_fixture->tr->delete_path("/tmp/tr_test");
+    EXPECT_TRUE(result.isOk());
 }
 UTEST_F(TaskRunnerFixture, delete_path_twice)
 {
@@ -314,6 +316,42 @@ UTEST_F(TaskRunnerFixture, delete_callback_empty)
 }
 
 // ---------------------------------------------------------------------------
+// Ignored Path/ Ignored Pattern
+// ---------------------------------------------------------------------------
+
+UTEST_F(TaskRunnerFixture, ignored_path)
+{
+    ASSERT_TRUE(utest_fixture->tr->add_path("/tmp/tr_test").isOk());
+    ofstream("/tmp/tr_test_file.txt").close();
+    ASSERT_TRUE(utest_fixture->tr->add_ignored_path("/tmp/tr_test/tr_test_file.txt").isOk());
+    EXPECT_TRUE(utest_fixture->tr->isIgnored("/tmp/tr_test/tr_test_file.txt"));
+}
+
+UTEST_F(TaskRunnerFixture, ignored_pattern)
+{
+    ASSERT_TRUE(utest_fixture->tr->add_path("/tmp/tr_test").isOk());
+    ASSERT_TRUE(utest_fixture->tr->add_ignored_pattern("*.txt").isOk());
+    ofstream("/tmp/tr_test_file.txt").close();
+    EXPECT_TRUE(utest_fixture->tr->isIgnored("*.txt"));
+}
+
+UTEST_F(TaskRunnerFixture, remove_ignored)
+{
+    ASSERT_TRUE(utest_fixture->tr->add_path("/tmp/tr_test").isOk());
+    ofstream("/tmp/tr_test_file.txt").close();
+    ASSERT_TRUE(utest_fixture->tr->add_ignored_path("/tmp/tr_test/tr_test_file.txt").isOk());
+    ASSERT_TRUE(utest_fixture->tr->isIgnored("/tmp/tr_test/tr_test_file.txt"));
+    ASSERT_TRUE(utest_fixture->tr->remove_ignored_path("/tmp/tr_test/tr_test_file.txt").isOk());
+    EXPECT_FALSE(utest_fixture->tr->isIgnored("/tmp/tr_test/tr_test_file.txt"));
+
+    ASSERT_TRUE(utest_fixture->tr->add_ignored_pattern("*.txt").isOk());
+    ASSERT_TRUE(utest_fixture->tr->isIgnored("*.txt"));
+    ASSERT_TRUE(utest_fixture->tr->remove_ignored_pattern("*.txt").isOk());
+    EXPECT_FALSE(utest_fixture->tr->isIgnored("*.txt"));
+}
+
+
+// ---------------------------------------------------------------------------
 // Execute
 // ---------------------------------------------------------------------------
 
@@ -326,6 +364,7 @@ UTEST_F(TaskRunnerFixture, execute)
     ASSERT_TRUE(utest_fixture->tr->add_on_success("ls").isOk());
     ASSERT_TRUE(utest_fixture->tr->add_on_failure("ls").isOk());
     ASSERT_TRUE(utest_fixture->tr->add_callback(utest_fixture->cb).isOk());
+    ASSERT_TRUE(utest_fixture->tr->start().isOk());
     WatchEvent e(2, "file", "/tmp/tr_test_file.txt", 0);
     auto r = utest_fixture->tr->execute(e);
     EXPECT_TRUE(r.isOk());
@@ -367,7 +406,7 @@ UTEST_F(TaskRunnerFixture, start_twice)
     ASSERT_TRUE(utest_fixture->tr->add_on_failure("ls").isOk());
     ASSERT_TRUE(utest_fixture->tr->add_callback(utest_fixture->cb).isOk());
     ASSERT_TRUE(utest_fixture->tr->start().isOk());
-    EXPECT_TRUE(utest_fixture->tr->start().isErr());
+    EXPECT_TRUE(utest_fixture->tr->start().isOk());// idempotent
 }
 
 // ---------------------------------------------------------------------------
@@ -393,7 +432,7 @@ UTEST_F(TaskRunnerFixture, stop)
 }
 UTEST_F(TaskRunnerFixture, stop_without_start)
 {
-    EXPECT_TRUE(utest_fixture->tr->stop().isErr());
+    EXPECT_TRUE(utest_fixture->tr->stop().isOk()); // idempotent
 }
 
 UTEST_MAIN()
