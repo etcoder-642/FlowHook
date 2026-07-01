@@ -17,12 +17,11 @@
 
 
 ## Table of Contents
-1. [Introduction]()
-2. [Quick Demo (A visual walkthrough of FlowHook managing a real build with success/failure branching)]()
-3. [Why FlowHook?]()
-4. [Installation]()
-5. [Command Reference & Usage]()
-6. [Known Issues]()
+1. [Introduction](#introduction)
+2. [Quick Demo](#quick-demo)
+3. [Why FlowHook?](#why-flowhook)
+4. [Installation](#installation)
+5. [Command Reference & Usage](#command-reference--usage)
 
 
 ### Introduction
@@ -39,8 +38,6 @@ It can watch your directory for changes and execute build commands automatically
 
 
 ### Why FlowHook?
-
-## 💡 Why FlowHook?
 
 FlowHook started out of personal necessity and a desire to look under the hood. A few months ago, I began diving deep into C++ and exploring systems programming. While falling in love with low-level control, I quickly hit a massive developer bottleneck: the constant, frustrating friction of having to manually re-compile and execute code every single time I made a minor file modification just to see if my changes worked. 
 
