@@ -58,9 +58,35 @@ Result<void> FlowHookCore::init() {
     for (auto c : task.commands)
       TEST(tr->add_command(c));
     for (auto p : task.file_paths)
-      TEST(tr->add_path(p));
+    {
+        auto r = tr->add_path(p);
+        if(r.isErr())
+        {
+            if(r.getErrCode() == ErrorCode::PATH_NOT_FOUND)
+            {
+                tr->delete_path(p);
+            }
+            else
+            {
+                return Result<void>::Err(r.unwrapErr());
+            }
+        }
+    }
     for (auto p : task.dir_paths)
-      TEST(tr->add_path(p));
+    {
+        auto r = tr->add_path(p);
+        if(r.isErr())
+        {
+            if(r.getErrCode() == ErrorCode::PATH_NOT_FOUND)
+            {
+                tr->delete_path(p);
+            }
+            else
+            {
+                return Result<void>::Err(r.unwrapErr());
+            }
+        }
+    }
     for (auto s : task.on_success)
       TEST(tr->add_on_success(s));
     for (auto f : task.on_failure)

@@ -243,12 +243,11 @@ Result<void> TaskRunner::add_path(const string &path) {
   if (!fs::exists(path)) {
     return Result<void>::Err(
         FWError::make(ErrorCode::PATH_NOT_FOUND,
-                      "Error: provided path " + path + " does not exist! ✗"));
+                      "Error: provided path " + path + " does not exist! ✗ \n // use the `flowhook remove --path <path>` command to remove it from the task"));
   }
-  if(isIgnored(path))
-  {
-      FW_LOG("[DEBUG] Path " + path + " matches ignored paths and patterns.");
-      return Result<void>::Ok();
+  if (isIgnored(path)) {
+    FW_LOG("[DEBUG] Path " + path + " matches ignored paths and patterns.");
+    return Result<void>::Ok();
   }
 
   TEST(add_path_internal(path, task.watching_depth, 0));
@@ -277,6 +276,14 @@ Result<void> TaskRunner::add_path_internal(const string &path, int MAX_DEPTH,
     FW_LOG("[DEBUG] Path " + path +
            " is a directory adding child files recursively...");
     for (auto &entry : fs::directory_iterator(path)) {
+      if (isIgnored(entry.path().string())) {
+        FW_LOG("[DEBUG] Path " + entry.path().string() +
+               " matches ignored patterns.");
+        FW_LOG("[DEBUG] Adding Path " + entry.path().string() +
+               " to task failed. ✗");
+        continue;
+      }
+
       if (entry.is_regular_file()) {
         FW_LOG("[DEBUG] Adding path " + entry.path().string() +
                " to filewatcher...");
@@ -284,13 +291,6 @@ Result<void> TaskRunner::add_path_internal(const string &path, int MAX_DEPTH,
                entry.path().string() +
                " matches ignored paths and patterns ...");
 
-        if (isIgnored(entry.path().string())) {
-          FW_LOG("[DEBUG] Path " + entry.path().string() +
-                 " matches ignored patterns.");
-          FW_LOG("[DEBUG] Adding Path " + entry.path().string() +
-                 " to task failed. ✗");
-          continue;
-        }
         resolved_files.push_back(entry.path().string());
         fw->add_path(entry.path().string());
 
@@ -302,9 +302,9 @@ Result<void> TaskRunner::add_path_internal(const string &path, int MAX_DEPTH,
           TEST(add_path_internal(entry.path().string(), MAX_DEPTH,
                                  CURRENT_DEPTH + 1));
         } else {
-            FW_LOG("[DEBUG] Path " + entry.path().string() +
-                   " is a directory. But MAX_DEPTH=" + to_string(MAX_DEPTH) +
-                   " have been reached. Child files won't be watched.");
+          FW_LOG("[DEBUG] Path " + entry.path().string() +
+                 " is a directory. But MAX_DEPTH=" + to_string(MAX_DEPTH) +
+                 " have been reached. Child files won't be watched.");
         }
       }
     }
