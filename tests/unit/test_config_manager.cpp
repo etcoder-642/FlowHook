@@ -8,7 +8,7 @@
 #include "../utest.h"
 #include "../../src/include/json.hpp"
 #include "../config_test.h"
-#include "../../src/version.h.in"
+#include "version.h"
 
 namespace fs = std::filesystem;
 using namespace flowhook;

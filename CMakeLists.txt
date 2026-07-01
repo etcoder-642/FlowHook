@@ -41,6 +41,7 @@ if(BUILD_TESTING)
     add_executable(test_config_manager tests/unit/test_config_manager.cpp)
     target_link_libraries(test_config_manager PRIVATE flowhook_lib)
     target_include_directories(test_config_manager PRIVATE tests)
+    target_include_directories(test_config_manager PUBLIC tests/unit ${CMAKE_CURRENT_BINARY_DIR})
     target_compile_definitions(test_config_manager PRIVATE FLOWHOOK_TESTING)
 
     add_executable(test_flowhook_core tests/integration/test_flowhook_core.cpp)
